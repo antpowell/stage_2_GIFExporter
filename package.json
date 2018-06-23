@@ -1,0 +1,23 @@
+{
+  "name": "BABYBLON",
+  "version": "1.0.0",
+  "description": "",
+  "main": "NewIndex.js",
+  "dependencies": {
+    "npm": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.4",
+    "@types/mocha": "^5.2.2",
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0",
+    "ts-node": "^6.1.1",
+    "typescript": "^2.9.2"
+  },
+  "scripts": {
+    "test": "mocha -wr ts-node/register test/**.spec.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
