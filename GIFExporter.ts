@@ -53,17 +53,10 @@ class GIFExporter {
 			this._recIntervalID = setInterval(() => {
 				if (HTMLCanvasElement.prototype.toBlob) {
 					this._canvas.toBlob(results => {
-						console.log(URL.createObjectURL(results));
-						// console.log(
-						// 	'​this._recIntervalID -> ',
-						// 	`pushing:${URL.createObjectURL(
-						// 		results
-						// 	)} to blobNumber: ${blobNumber}`
-						// );
-						// this._blobURLs.push(
-						// 	new iBlobURL(blobNumber, URL.createObjectURL(results))
-						// );
-						// blobNumber++;
+						this._blobURLs.push(
+							new iBlobURL(blobNumber, URL.createObjectURL(results))
+						);
+						blobNumber++;
 					});
 				} else {
 					console.log(this._canvas.toDataURL());
@@ -117,8 +110,8 @@ class GIFExporter {
 			let newCTXData: Uint8ClampedArray;
 
 			const canvas2 = document.createElement('canvas') as HTMLCanvasElement;
-			canvas2.setAttribute('width', canvas.width.toString());
-			canvas2.setAttribute('height', canvas.height.toString());
+			canvas2.setAttribute('width', this._canvas.width.toString());
+			canvas2.setAttribute('height', this._canvas.height.toString());
 			const ctx = canvas2.getContext('2d');
 
 			this._blobURLs.forEach(blob => {
@@ -148,8 +141,8 @@ class GIFExporter {
 	private processBlobsInOrder() {
 		return new Promise((resolve, reject) => {
 			const canvas2 = document.createElement('canvas') as HTMLCanvasElement;
-			canvas2.setAttribute('width', canvas.width.toString());
-			canvas2.setAttribute('height', canvas.height.toString());
+			canvas2.setAttribute('width', this._canvas.width.toString());
+			canvas2.setAttribute('height', this._canvas.height.toString());
 			const ctx = canvas2.getContext('2d');
 
 			this.process(ctx).then(_ => {
@@ -165,13 +158,13 @@ class GIFExporter {
 			if (!blobURL) {
 				console.log('​img.onload -> ', 'inner completed');
 				resolve();
+				this._gifGenerator.download('insideDownload.gif');
 				return;
 			}
 			const img = new Image();
 			console.log('​privateprocessBlobs -> url', blobURL._url);
 
 			img.onload = () => {
-				``;
 				console.log(img.src);
 				ctx.drawImage(img, 0, 0, this._canvas.width, this._canvas.height);
 				// read new canvas data
@@ -185,7 +178,7 @@ class GIFExporter {
 				this.mapPixelIndex();
 				this._gifGenerator.generateFrame(this._indexedPixels).then(_ => {
 					this.reset();
-					this.process();
+					this.process(ctx);
 				});
 			};
 			img.src = blobURL._url;

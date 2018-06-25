@@ -31,17 +31,8 @@ var GIFExporter = /** @class */ (function () {
             _this._recIntervalID = setInterval(function () {
                 if (HTMLCanvasElement.prototype.toBlob) {
                     _this._canvas.toBlob(function (results) {
-                        console.log(URL.createObjectURL(results));
-                        // console.log(
-                        // 	'​this._recIntervalID -> ',
-                        // 	`pushing:${URL.createObjectURL(
-                        // 		results
-                        // 	)} to blobNumber: ${blobNumber}`
-                        // );
-                        // this._blobURLs.push(
-                        // 	new iBlobURL(blobNumber, URL.createObjectURL(results))
-                        // );
-                        // blobNumber++;
+                        _this._blobURLs.push(new iBlobURL(blobNumber, URL.createObjectURL(results)));
+                        blobNumber++;
                     });
                 }
                 else {
@@ -94,8 +85,8 @@ var GIFExporter = /** @class */ (function () {
         return new Promise(function (resolve, reject) {
             var newCTXData;
             var canvas2 = document.createElement('canvas');
-            canvas2.setAttribute('width', canvas.width.toString());
-            canvas2.setAttribute('height', canvas.height.toString());
+            canvas2.setAttribute('width', _this._canvas.width.toString());
+            canvas2.setAttribute('height', _this._canvas.height.toString());
             var ctx = canvas2.getContext('2d');
             _this._blobURLs.forEach(function (blob) {
                 var img = new Image();
@@ -123,8 +114,8 @@ var GIFExporter = /** @class */ (function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var canvas2 = document.createElement('canvas');
-            canvas2.setAttribute('width', canvas.width.toString());
-            canvas2.setAttribute('height', canvas.height.toString());
+            canvas2.setAttribute('width', _this._canvas.width.toString());
+            canvas2.setAttribute('height', _this._canvas.height.toString());
             var ctx = canvas2.getContext('2d');
             _this.process(ctx).then(function (_) {
                 resolve();
@@ -139,12 +130,12 @@ var GIFExporter = /** @class */ (function () {
             if (!blobURL) {
                 console.log('​img.onload -> ', 'inner completed');
                 resolve();
+                _this._gifGenerator.download('insideDownload.gif');
                 return;
             }
             var img = new Image();
             console.log('​privateprocessBlobs -> url', blobURL._url);
             img.onload = function () {
-                "";
                 console.log(img.src);
                 ctx.drawImage(img, 0, 0, _this._canvas.width, _this._canvas.height);
                 // read new canvas data
@@ -153,7 +144,7 @@ var GIFExporter = /** @class */ (function () {
                 _this.mapPixelIndex();
                 _this._gifGenerator.generateFrame(_this._indexedPixels).then(function (_) {
                     _this.reset();
-                    _this.process();
+                    _this.process(ctx);
                 });
             };
             img.src = blobURL._url;
