@@ -4,7 +4,7 @@ class Game {
 	private _scene: BABYLON.Scene;
 	private _camera: BABYLON.FreeCamera;
 	private _light: BABYLON.Light;
-	private _gifExporter: GIFExporter3;
+	private _gifExporter: GIFExporter;
 
 	constructor(canvasElement: string) {
 		this._canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
