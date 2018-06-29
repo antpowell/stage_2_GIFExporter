@@ -4,15 +4,12 @@ class GIFExporter3 {
 	private _delay: number;
 	private _duration: number;
 	private _GCT: string[];
-	private _blobURLs: string[] = [];
-	private _blobCount: number = 0;
 	private _intervalRef: number;
 	private _width: number;
 	private _height: number;
 	private _imageDataCollection: Uint8Array[] = [];
 	private _gifGenerator: GIFGenerator;
 	private _colorLookUpTable: { [index: string]: number };
-	private _ctx: CanvasRenderingContext2D;
 
 	constructor(
 		engine: BABYLON.Engine,
@@ -60,119 +57,12 @@ class GIFExporter3 {
 		this._gifGenerator.download('testingGE3.gif');
 	}
 
-	private getBlobs() {
-		console.log('​GIFExporter3 -> privategetBlobs -> ');
-		return new Promise((resolve, reject) => {
-			this._intervalRef = setInterval(() => {
-				this.engineBlobToURL();
-			}, this._delay);
-			setTimeout(() => {
-				this.stop();
-				resolve();
-			}, this._duration);
-		});
-	}
-
-	private engineBlobToURL() {
-		this._blobCount++;
-		this.ToBlob(this._canvas, blob => {
-			console.log('getting blob ', this._blobCount);
-			this._blobURLs.push(URL.createObjectURL(blob));
-		});
-	}
-
-	private setupCanvas() {
-		console.log('​GIFExporter3 -> privatesetupCanvas -> ');
-		const canvas2 = document.createElement('canvas') as HTMLCanvasElement;
-		canvas2.setAttribute('width', this._width.toString());
-		canvas2.setAttribute('height', this._height.toString());
-		const ctx = canvas2.getContext('2d');
-		return ctx;
-	}
-
-	private setupImgs() {
-		console.log('​GIFExporter3 -> privatesetupImgs -> ');
-		return new Promise((resolve, reject) => {
-			console.log(`Creating images`);
-
-			const imgs: HTMLImageElement[] = [];
-			let count = this._blobCount;
-
-			this._blobURLs.forEach(url => {
-				console.log(`working on image`, url);
-
-				const img = new Image();
-				img.width = 200;
-				img.height = 200;
-				img.onload = async () => {
-					await this.collectImageDataOnLoad(img);
-					// imgs.push(img);
-					console.log('count', count);
-					if (--count === 1) resolve();
-				};
-				img.src = url;
-			});
-		});
-	}
-
-	private collectImageData(
-		imgs: HTMLImageElement[],
-		ctx: CanvasRenderingContext2D
-	) {
-		return new Promise((resolve, reject) => {
-			let imgDataCollection: Uint8ClampedArray[] = [];
-			let count = imgs.length;
-
-			imgs.forEach(img => {
-				ctx.drawImage(img, 0, 0, this._width, this._height);
-				imgDataCollection.push(
-					ctx.getImageData(0, 0, this._width, this._height).data
-				);
-				console.log(`image data collection`, imgDataCollection);
-
-				ctx.clearRect(0, 0, this._width, this._height);
-				if (--count === 0) resolve(imgDataCollection);
-			});
-		});
-	}
-
-	private collectImageDataOnLoad(img) {
-		return new Promise((resolve, reject) => {
-			console.log('collecting data');
-
-			const gl: WebGLRenderingContext =
-				this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
-			console.log(gl);
-			const pixels = new Uint8Array(
-				gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-			);
-			gl.readPixels(
-				0,
-				0,
-				gl.drawingBufferWidth,
-				gl.drawingBufferHeight,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
-				pixels
-			);
-			console.log(pixels);
-
-			// console.log(`collecting data on `, img);
-			// this._ctx.drawImage(img, 0, 0, this._width, this._height);
-			// this._imageDataCollection.push(
-			// 	this._ctx.getImageData(0, 0, this._width, this._height)
-			// );
-			resolve();
-		});
-	}
-
 	private getSnapShotDataFromCanvas() {
 		return new Promise((resolve, reject) => {
 			this._intervalRef = setInterval(() => {
 				// console.log('getting data from canvas');
-				const gl: WebGLRenderingContext =
-					(this._canvas.getContext('webgl2') as WebGLRenderingContext) ||
-					this._canvas.getContext('webgl');
+				const gl =
+					this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
 				// console.log(gl);
 				const pixels = new Uint8Array(
 					gl.drawingBufferWidth * gl.drawingBufferHeight * 4
@@ -197,14 +87,40 @@ class GIFExporter3 {
 
 	private processFrames(imageDataCollection: Uint8Array[]) {
 		console.log('​GIFExporter3 -> privateprocessFrames -> ');
-		new Promise((resolve, reject) => {
+		new Promise(async (resolve, reject) => {
 			let count = imageDataCollection.length;
 			imageDataCollection.forEach(async imgData => {
+				imgData = await this.flipFrame(imgData);
 				const rgbData = this.removeAlpha(imgData);
 				const indexedData = this.mapPixelIndex(rgbData);
 				this._gifGenerator.generateFrame(indexedData);
 				if (--count === 0) resolve();
 			});
+		});
+	}
+
+	private flipFrame(frame: Uint8Array) {
+		return new Promise((resolve, reject) => {
+			const halfWayPoint = Math.floor(this._height / 2); // the | 0 keeps the result an int
+			var bytesPerRow = this._width * 4;
+
+			// make a temp buffer to hold one row
+			var temp = new Uint8Array(this._width * 4);
+			for (var y = 0; y < halfWayPoint; ++y) {
+				var topOffset = y * bytesPerRow;
+				var bottomOffset = (this._height - y - 1) * bytesPerRow;
+
+				// make copy of a row on the top half
+				temp.set(frame.subarray(topOffset, topOffset + bytesPerRow));
+
+				// copy a row from the bottom half to the top
+				frame.copyWithin(topOffset, bottomOffset, bottomOffset + bytesPerRow);
+
+				// copy the copy of the top half row to the bottom half
+				frame.set(temp, bottomOffset);
+
+				if (y < halfWayPoint) resolve(frame);
+			}
 		});
 	}
 
@@ -277,19 +193,3 @@ class GIFExporter3 {
 		}, mimeType);
 	}
 }
-
-/* (function() {
-    gl = window.renderCanvas.getContext('webgl2')
-    console.log(gl)
-    const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight *4);
-    console.log(pixels)
-    gl.readPixels(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
-    console.log(pixels)
-})(); */
-// (function() {
-// 	const gl = window.renderCanvas.getContext('webgl2');
-// 	const pixels = new Uint8Array(
-// 		gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-// 	);
-// 	console.log(pixels);
-// })();

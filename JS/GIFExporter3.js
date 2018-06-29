@@ -35,8 +35,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 var GIFExporter3 = /** @class */ (function () {
     function GIFExporter3(engine, options) {
-        this._blobURLs = [];
-        this._blobCount = 0;
         this._imageDataCollection = [];
         var colorGenerator = new ColorTableGenerator().generate();
         this._engine = engine;
@@ -100,104 +98,12 @@ var GIFExporter3 = /** @class */ (function () {
             });
         });
     };
-    GIFExporter3.prototype.getBlobs = function () {
-        var _this = this;
-        console.log('​GIFExporter3 -> privategetBlobs -> ');
-        return new Promise(function (resolve, reject) {
-            _this._intervalRef = setInterval(function () {
-                _this.engineBlobToURL();
-            }, _this._delay);
-            setTimeout(function () {
-                _this.stop();
-                resolve();
-            }, _this._duration);
-        });
-    };
-    GIFExporter3.prototype.engineBlobToURL = function () {
-        var _this = this;
-        this._blobCount++;
-        this.ToBlob(this._canvas, function (blob) {
-            console.log('getting blob ', _this._blobCount);
-            _this._blobURLs.push(URL.createObjectURL(blob));
-        });
-    };
-    GIFExporter3.prototype.setupCanvas = function () {
-        console.log('​GIFExporter3 -> privatesetupCanvas -> ');
-        var canvas2 = document.createElement('canvas');
-        canvas2.setAttribute('width', this._width.toString());
-        canvas2.setAttribute('height', this._height.toString());
-        var ctx = canvas2.getContext('2d');
-        return ctx;
-    };
-    GIFExporter3.prototype.setupImgs = function () {
-        var _this = this;
-        console.log('​GIFExporter3 -> privatesetupImgs -> ');
-        return new Promise(function (resolve, reject) {
-            console.log("Creating images");
-            var imgs = [];
-            var count = _this._blobCount;
-            _this._blobURLs.forEach(function (url) {
-                console.log("working on image", url);
-                var img = new Image();
-                img.width = 200;
-                img.height = 200;
-                img.onload = function () { return __awaiter(_this, void 0, void 0, function () {
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0: return [4 /*yield*/, this.collectImageDataOnLoad(img)];
-                            case 1:
-                                _a.sent();
-                                // imgs.push(img);
-                                console.log('count', count);
-                                if (--count === 1)
-                                    resolve();
-                                return [2 /*return*/];
-                        }
-                    });
-                }); };
-                img.src = url;
-            });
-        });
-    };
-    GIFExporter3.prototype.collectImageData = function (imgs, ctx) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var imgDataCollection = [];
-            var count = imgs.length;
-            imgs.forEach(function (img) {
-                ctx.drawImage(img, 0, 0, _this._width, _this._height);
-                imgDataCollection.push(ctx.getImageData(0, 0, _this._width, _this._height).data);
-                console.log("image data collection", imgDataCollection);
-                ctx.clearRect(0, 0, _this._width, _this._height);
-                if (--count === 0)
-                    resolve(imgDataCollection);
-            });
-        });
-    };
-    GIFExporter3.prototype.collectImageDataOnLoad = function (img) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            console.log('collecting data');
-            var gl = _this._canvas.getContext('webgl2') || _this._canvas.getContext('webgl');
-            console.log(gl);
-            var pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-            gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-            console.log(pixels);
-            // console.log(`collecting data on `, img);
-            // this._ctx.drawImage(img, 0, 0, this._width, this._height);
-            // this._imageDataCollection.push(
-            // 	this._ctx.getImageData(0, 0, this._width, this._height)
-            // );
-            resolve();
-        });
-    };
     GIFExporter3.prototype.getSnapShotDataFromCanvas = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             _this._intervalRef = setInterval(function () {
                 // console.log('getting data from canvas');
-                var gl = _this._canvas.getContext('webgl2') ||
-                    _this._canvas.getContext('webgl');
+                var gl = _this._canvas.getContext('webgl2') || _this._canvas.getContext('webgl');
                 // console.log(gl);
                 var pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
                 gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
@@ -212,19 +118,50 @@ var GIFExporter3 = /** @class */ (function () {
     GIFExporter3.prototype.processFrames = function (imageDataCollection) {
         var _this = this;
         console.log('​GIFExporter3 -> privateprocessFrames -> ');
-        new Promise(function (resolve, reject) {
-            var count = imageDataCollection.length;
-            imageDataCollection.forEach(function (imgData) { return __awaiter(_this, void 0, void 0, function () {
-                var rgbData, indexedData;
-                return __generator(this, function (_a) {
-                    rgbData = this.removeAlpha(imgData);
-                    indexedData = this.mapPixelIndex(rgbData);
-                    this._gifGenerator.generateFrame(indexedData);
-                    if (--count === 0)
-                        resolve();
-                    return [2 /*return*/];
-                });
-            }); });
+        new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+            var count;
+            var _this = this;
+            return __generator(this, function (_a) {
+                count = imageDataCollection.length;
+                imageDataCollection.forEach(function (imgData) { return __awaiter(_this, void 0, void 0, function () {
+                    var rgbData, indexedData;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4 /*yield*/, this.flipFrame(imgData)];
+                            case 1:
+                                imgData = _a.sent();
+                                rgbData = this.removeAlpha(imgData);
+                                indexedData = this.mapPixelIndex(rgbData);
+                                this._gifGenerator.generateFrame(indexedData);
+                                if (--count === 0)
+                                    resolve();
+                                return [2 /*return*/];
+                        }
+                    });
+                }); });
+                return [2 /*return*/];
+            });
+        }); });
+    };
+    GIFExporter3.prototype.flipFrame = function (frame) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var halfWayPoint = Math.floor(_this._height / 2); // the | 0 keeps the result an int
+            var bytesPerRow = _this._width * 4;
+            // make a temp buffer to hold one row
+            var temp = new Uint8Array(_this._width * 4);
+            for (var y = 0; y < halfWayPoint; ++y) {
+                var topOffset = y * bytesPerRow;
+                var bottomOffset = (_this._height - y - 1) * bytesPerRow;
+                // make copy of a row on the top half
+                temp.set(frame.subarray(topOffset, topOffset + bytesPerRow));
+                // copy a row from the bottom half to the top
+                frame.copyWithin(topOffset, bottomOffset, bottomOffset + bytesPerRow);
+                // copy the copy of the top half row to the bottom half
+                frame.set(temp, bottomOffset);
+                if (y < halfWayPoint)
+                    resolve(frame);
+            }
         });
     };
     GIFExporter3.prototype.removeAlpha = function (colorArray) {
@@ -284,19 +221,4 @@ var GIFExporter3 = /** @class */ (function () {
     };
     return GIFExporter3;
 }());
-/* (function() {
-    gl = window.renderCanvas.getContext('webgl2')
-    console.log(gl)
-    const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight *4);
-    console.log(pixels)
-    gl.readPixels(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
-    console.log(pixels)
-})(); */
-// (function() {
-// 	const gl = window.renderCanvas.getContext('webgl2');
-// 	const pixels = new Uint8Array(
-// 		gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-// 	);
-// 	console.log(pixels);
-// })();
 //# sourceMappingURL=GIFExporter3.js.map

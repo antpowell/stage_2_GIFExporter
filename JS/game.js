@@ -2,11 +2,11 @@ var Game = /** @class */ (function () {
     function Game(canvasElement) {
         this._canvas = document.getElementById(canvasElement);
         this._engine = new BABYLON.Engine(this._canvas, true, {
-            preserveDrawingBuffer: true,
+            preserveDrawingBuffer: true
         });
         this._gifExporter = new GIFExporter3(this._engine, {
             delay: 60,
-            duration: 1000,
+            duration: 1000
         });
     }
     Game.prototype.createScene = function () {
@@ -23,7 +23,7 @@ var Game = /** @class */ (function () {
         // Create a built-in "sphere" shape; with 16 segments and diameter of 2.
         var sphere = BABYLON.MeshBuilder.CreateSphere('sphere', {
             segments: 16,
-            diameter: 2,
+            diameter: 2
         }, this._scene);
         // Move the sphere upward 1/2 of its height.
         sphere.position.y = 1;
@@ -31,7 +31,7 @@ var Game = /** @class */ (function () {
         var ground = BABYLON.MeshBuilder.CreateGround('ground', {
             width: 6,
             height: 6,
-            subdivisions: 2,
+            subdivisions: 2
         }, this._scene);
     };
     Game.prototype.doRender = function () {

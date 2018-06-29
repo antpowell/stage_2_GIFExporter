@@ -31,7 +31,7 @@ var GIFGenerator = /** @class */ (function () {
         var download = document.createElement('a');
         download.download = filename;
         download.href = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
-            type: 'image/gif',
+            type: 'image/gif'
         }));
         download.click();
     };
