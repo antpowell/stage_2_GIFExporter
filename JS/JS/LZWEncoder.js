@@ -101,79 +101,71 @@ LZWEncoder = function () {
             htab[i] = -1;
     };
     var compress = exports.compress = function compress(init_bits, outs) {
-        return new Promise((resolve, reject) => {
-            var fcode;
-            var i; /* = 0 */
-            var c;
-            var ent;
-            var disp;
-            var hsize_reg;
-            var hshift;
-            // Set up the globals: g_init_bits - initial number of bits
-            g_init_bits = init_bits;
-            // Set up the necessary values
-            clear_flg = false;
-            n_bits = g_init_bits;
-            maxcode = MAXCODE(n_bits);
-            ClearCode = 1 << (init_bits - 1);
-            EOFCode = ClearCode + 1;
-            free_ent = ClearCode + 2;
-            a_count = 0; // clear packet
-            ent = nextPixel();
-            hshift = 0;
-            for (fcode = hsize; fcode < 65536; fcode *= 2)
-                ++hshift;
-            hshift = 8 - hshift; // set hash code range bound
-            hsize_reg = hsize;
-            cl_hash(hsize_reg); // clear hash table
-            output(ClearCode, outs);
-            outer_loop: while ((c = nextPixel()) != EOF) {
-                fcode = (c << maxbits) + ent;
-                i = (c << hshift) ^ ent; // xor hashing
-                if (htab[i] == fcode) {
-                    ent = codetab[i];
-                    continue;
-                }
-                else if (htab[i] >= 0) { // non-empty slot
-                    disp = hsize_reg - i; // secondary hash (after G. Knott)
-                    if (i === 0)
-                        disp = 1;
-                    do {
-                        if ((i -= disp) < 0)
-                            i += hsize_reg;
-                        if (htab[i] == fcode) {
-                            ent = codetab[i];
-                            continue outer_loop;
-                        }
-                    } while (htab[i] >= 0);
-                }
-                output(ent, outs);
-                ent = c;
-                if (free_ent < maxmaxcode) {
-                    codetab[i] = free_ent++; // code -> hashtable
-                    htab[i] = fcode;
-                }
-                else
-                    cl_block(outs);
+        var fcode;
+        var i; /* = 0 */
+        var c;
+        var ent;
+        var disp;
+        var hsize_reg;
+        var hshift;
+        // Set up the globals: g_init_bits - initial number of bits
+        g_init_bits = init_bits;
+        // Set up the necessary values
+        clear_flg = false;
+        n_bits = g_init_bits;
+        maxcode = MAXCODE(n_bits);
+        ClearCode = 1 << (init_bits - 1);
+        EOFCode = ClearCode + 1;
+        free_ent = ClearCode + 2;
+        a_count = 0; // clear packet
+        ent = nextPixel();
+        hshift = 0;
+        for (fcode = hsize; fcode < 65536; fcode *= 2)
+            ++hshift;
+        hshift = 8 - hshift; // set hash code range bound
+        hsize_reg = hsize;
+        cl_hash(hsize_reg); // clear hash table
+        output(ClearCode, outs);
+        outer_loop: while ((c = nextPixel()) != EOF) {
+            fcode = (c << maxbits) + ent;
+            i = (c << hshift) ^ ent; // xor hashing
+            if (htab[i] == fcode) {
+                ent = codetab[i];
+                continue;
             }
-            // Put out the final code.
+            else if (htab[i] >= 0) { // non-empty slot
+                disp = hsize_reg - i; // secondary hash (after G. Knott)
+                if (i === 0)
+                    disp = 1;
+                do {
+                    if ((i -= disp) < 0)
+                        i += hsize_reg;
+                    if (htab[i] == fcode) {
+                        ent = codetab[i];
+                        continue outer_loop;
+                    }
+                } while (htab[i] >= 0);
+            }
             output(ent, outs);
-            output(EOFCode, outs);
-            resolve();
-        });
+            ent = c;
+            if (free_ent < maxmaxcode) {
+                codetab[i] = free_ent++; // code -> hashtable
+                htab[i] = fcode;
+            }
+            else
+                cl_block(outs);
+        }
+        // Put out the final code.
+        output(ent, outs);
+        output(EOFCode, outs);
     };
     // ----------------------------------------------------------------------------
     var encode = exports.encode = function encode(os) {
-        return new Promise((resolve, rejcet) => {
-            os.write(initCodeSize); // write "initial code size" byte
-            remaining = imgW * imgH; // reset navigation variables
-            curPixel = 0;
-            compress(initCodeSize + 1, os)
-                .then(_ => {
-                os.write(0); // write block terminator
-                resolve();
-            }); // compress and write the pixel data
-        });
+        os.write(initCodeSize); // write "initial code size" byte
+        remaining = imgW * imgH; // reset navigation variables
+        curPixel = 0;
+        compress(initCodeSize + 1, os); // compress and write the pixel data
+        os.write(0); // write block terminator
     };
     // Flush the packet to disk, and reset the accumulator
     var flush_char = function flush_char(outs) {

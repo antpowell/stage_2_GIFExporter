@@ -4,7 +4,7 @@ var Game = /** @class */ (function () {
         this._engine = new BABYLON.Engine(this._canvas, true, {
             preserveDrawingBuffer: true,
         });
-        this._gifExporter = new GIFExporter(this._engine, {
+        this._gifExporter = new GIFExporter3(this._engine, {
             delay: 60,
             duration: 1000,
         });
@@ -48,10 +48,14 @@ var Game = /** @class */ (function () {
     Game.prototype.downloadGIF = function () {
         this._gifExporter.download();
     };
+    Game.prototype.stopGIF = function () {
+        this._gifExporter.start();
+    };
     return Game;
 }());
 window.addEventListener('DOMContentLoaded', function () {
     var recordBtn = document.getElementById('recordBtn');
+    var stopBtn = document.getElementById('recStopBtn');
     // Setup GIF generator
     // Create the game using the 'renderCanvas'.
     var game = new Game('renderCanvas');
@@ -61,6 +65,9 @@ window.addEventListener('DOMContentLoaded', function () {
     game.doRender();
     recordBtn.addEventListener('click', function () {
         game.downloadGIF();
+    });
+    stopBtn.addEventListener('click', function () {
+        game.stopGIF();
     });
 });
 //# sourceMappingURL=game.js.map

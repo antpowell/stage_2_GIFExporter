@@ -4,12 +4,12 @@ var GIFExporter = /** @class */ (function () {
     function GIFExporter(engine, options) {
         var _this = this;
         this._blobURLs = [];
+        this._blobCount = 0;
         this._RGBPixelData = [];
         this._indexedPixels = [];
         this._colorLookup = {};
         this._delay = 50;
         this._duration = 5000;
-        this._isCapturing = false;
         this._hasNextBlob = true;
         this._canvas = engine.getRenderingCanvas();
         this._delay = options.delay || 50;
@@ -24,26 +24,32 @@ var GIFExporter = /** @class */ (function () {
     }
     GIFExporter.prototype.start = function () {
         var _this = this;
-        this._isCapturing = true;
         var blobNumber = 0;
         /* Capture blobs at this._delay intervals and place them in an array */
         return new Promise(function (resolve, reject) {
+            /**
+             * TODO: find a better way of adjusting snapshot interval.
+             */
             _this._recIntervalID = setInterval(function () {
-                if (HTMLCanvasElement.prototype.toBlob) {
-                    _this._canvas.toBlob(function (results) {
-                        _this._blobURLs.push(new iBlobURL(blobNumber, URL.createObjectURL(results)));
+                _this.ToBlob(_this._canvas, function (blob) {
+                    console.log(blob);
+                    _this._blobURLs.push(new iBlobURL(blobNumber, URL.createObjectURL(blob)));
+                });
+                /* if (HTMLCanvasElement.prototype.toBlob) {
+                    this._canvas.toBlob(results => {
+                        this._blobURLs.push(
+                            new iBlobURL(blobNumber, URL.createObjectURL(results))
+                        );
                         blobNumber++;
                     });
-                }
-                else {
-                    console.log(_this._canvas.toDataURL());
-                }
+                } else {
+                    // console.log(this._canvas.toDataURL());
+                } */
             }, _this._delay);
             /* Stop capturing blobs and start processing them. */
             setTimeout(function () {
                 console.log('​start -> ', 'attempting to stop');
                 _this.stop().then(function () {
-                    _this._isCapturing = false;
                     console.log('​stop -> ', 'has completed inside');
                     console.log(_this._blobURLs);
                     resolve();
@@ -52,21 +58,18 @@ var GIFExporter = /** @class */ (function () {
         });
     };
     GIFExporter.prototype.stop = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this._isCapturing) {
-                clearInterval(_this._recIntervalID);
-                _this.processBlobsInOrder().then(function () {
-                    _this.getStitchedBlob().then(function () {
-                        resolve();
-                    });
-                });
-                console.log('​stop -> ', 'has completed outside');
-            }
-            else {
-                reject('Capturing has already complete.');
-            }
-        });
+        alert("processing GIF");
+        clearInterval(this._recIntervalID);
+        // return new Promise((resolve, reject) => {
+        // 	clearInterval(this._recIntervalID);
+        // 	this.processBlobs().then(() => {
+        // 		this.getStitchedBlob().then(() => {
+        // 			resolve();
+        // 		});
+        // 	});
+        // 	console.log('​stop -> ', 'has completed outside');
+        // 	reject('Capturing has already complete.');
+        // });
     };
     /* Should capture URL of each image created by the GIFGenerator as image/png to display to the user.
         This will allow the ability to select what images make up the animated GIF before stitching it together.*/
@@ -75,40 +78,19 @@ var GIFExporter = /** @class */ (function () {
       and download it to the users device. */
     GIFExporter.prototype.download = function () {
         var _this = this;
-        this.start().then(function (GIFURL) {
-            // console.log(GIFURL);
-            _this._gifGenerator.download('insideDownload.gif');
+        this.getBlobs(this._canvas).then(function () {
+            console.log('​GIFExporter -> download -> ', "blob[] filled with " + _this._blobURLs);
+            _this.setupCanvas().then(function (canvas) {
+                // this.getImageData(canvas);
+            });
+        });
+        this._blobURLs.forEach(function (blob) {
+            _this.getImages(blob);
         });
     };
     GIFExporter.prototype.processBlobs = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var newCTXData;
-            var canvas2 = document.createElement('canvas');
-            canvas2.setAttribute('width', _this._canvas.width.toString());
-            canvas2.setAttribute('height', _this._canvas.height.toString());
-            var ctx = canvas2.getContext('2d');
-            _this._blobURLs.forEach(function (blob) {
-                var img = new Image();
-                console.log('​privateprocessBlobs -> url', blob._id);
-                img.onload = function () {
-                    console.log(img.src);
-                    ctx.drawImage(img, 0, 0, canvas2.width, canvas2.height);
-                    // read new canvas data
-                    newCTXData = ctx.getImageData(0, 0, canvas2.width, canvas2.height)
-                        .data;
-                    _this.removeAlpha(newCTXData);
-                    _this.mapPixelIndex();
-                    _this._gifGenerator.generateFrame(_this._indexedPixels);
-                    _this.reset();
-                    if (img.src === _this._blobURLs[_this._blobURLs.length - 1]) {
-                        console.log('​img.onload -> ', 'inner completed');
-                        resolve();
-                    }
-                };
-                img.src = blob._url;
-            });
-        });
+        var canvasPromises = this._blobURLs.map(this.getImages);
+        Promise.all(canvasPromises).then(function (data) { return console.log(data); });
     };
     GIFExporter.prototype.processBlobsInOrder = function () {
         var _this = this;
@@ -124,7 +106,9 @@ var GIFExporter = /** @class */ (function () {
     };
     GIFExporter.prototype.process = function (ctx) {
         var _this = this;
+        console.log('​GIFExporter -> privateprocess -> ');
         var newCTXData;
+        var allIndexedImages = [];
         return new Promise(function (resolve, reject) {
             var blobURL = _this._blobURLs.shift();
             if (!blobURL) {
@@ -142,6 +126,7 @@ var GIFExporter = /** @class */ (function () {
                 newCTXData = ctx.getImageData(0, 0, _this._canvas.width, _this._canvas.height).data;
                 _this.removeAlpha(newCTXData);
                 _this.mapPixelIndex();
+                allIndexedImages.push(_this._indexedPixels);
                 _this._gifGenerator.generateFrame(_this._indexedPixels).then(function (_) {
                     _this.reset();
                     _this.process(ctx);
@@ -192,6 +177,79 @@ var GIFExporter = /** @class */ (function () {
             color -= color % 51;
         }
         return color;
+    };
+    GIFExporter.prototype.getImages = function (blob) {
+        var url = blob._url;
+        return new Promise(function (resolve, reject) {
+            var image = new Image();
+            image.onload = function () {
+                resolve(image);
+            };
+            image.onerror = function () {
+                reject(url + " did not load as an image correctly");
+            };
+            image.src = url;
+        });
+    };
+    /**
+     * ToBlob Edge fix from Babylon.js
+     * @param canvas
+     * @param successCallback
+     * @param mimeType
+     */
+    GIFExporter.prototype.ToBlob = function (canvas, successCallback, mimeType) {
+        // We need HTMLCanvasElement.toBlob for HD screenshots
+        if (mimeType === void 0) { mimeType = 'image/png'; }
+        if (!canvas.toBlob) {
+            //  low performance polyfill based on toDataURL (https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
+            canvas.toBlob = function (callback, type, quality) {
+                var _this = this;
+                setTimeout(function () {
+                    var binStr = atob(_this.toDataURL(type, quality).split(',')[1]), len = binStr.length, arr = new Uint8Array(len);
+                    for (var i = 0; i < len; i++) {
+                        arr[i] = binStr.charCodeAt(i);
+                    }
+                    callback(new Blob([arr]));
+                });
+            };
+        }
+        canvas.toBlob(function (blob) {
+            successCallback(blob);
+        }, mimeType);
+    };
+    GIFExporter.prototype.getBlobs = function (canvas) {
+        var _this = this;
+        /* Get Blob */
+        /* create URL for each blob in Blob[] */
+        /* return Blob[] */
+        return new Promise(function (resolve, reject) {
+            console.log('​GIFExporter -> privategetBlobs -> ', "start");
+            /**
+             * // TODO: find a better way of adjusting snapshot interval.
+             */
+            _this._recIntervalID = setInterval(function () {
+                _this._blobCount++;
+                console.log('​GIFExporter -> this._recIntervalID -> ', "iteration " + _this._blobCount);
+                console.log(_this._recIntervalID);
+                _this.ToBlob(canvas, function (blob) {
+                    _this._blobURLs.push(new iBlobURL(_this._blobCount, URL.createObjectURL(blob)));
+                });
+            }, _this._delay);
+            setTimeout(function () {
+                _this.stop();
+                resolve();
+            }, _this._duration);
+        });
+    };
+    GIFExporter.prototype.setupCanvas = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var canvas2 = document.createElement('canvas');
+            canvas2.setAttribute('width', _this._canvas.width.toString());
+            canvas2.setAttribute('height', _this._canvas.height.toString());
+            var ctx = canvas2.getContext('2d');
+            resolve(ctx);
+        });
     };
     return GIFExporter;
 }());

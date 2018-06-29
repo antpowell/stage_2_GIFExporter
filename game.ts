@@ -4,14 +4,14 @@ class Game {
 	private _scene: BABYLON.Scene;
 	private _camera: BABYLON.FreeCamera;
 	private _light: BABYLON.Light;
-	private _gifExporter: GIFExporter;
+	private _gifExporter: GIFExporter3;
 
 	constructor(canvasElement: string) {
 		this._canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
 		this._engine = new BABYLON.Engine(this._canvas, true, {
 			preserveDrawingBuffer: true,
 		});
-		this._gifExporter = new GIFExporter(this._engine, {
+		this._gifExporter = new GIFExporter3(this._engine, {
 			delay: 60,
 			duration: 1000,
 		});
@@ -81,12 +81,16 @@ class Game {
 	downloadGIF() {
 		this._gifExporter.download();
 	}
+	stopGIF() {
+		this._gifExporter.start();
+	}
 }
 
 window.addEventListener('DOMContentLoaded', () => {
 	const recordBtn: HTMLCanvasElement = document.getElementById(
 		'recordBtn'
 	) as HTMLCanvasElement;
+	const stopBtn = document.getElementById('recStopBtn');
 	// Setup GIF generator
 
 	// Create the game using the 'renderCanvas'.
@@ -100,5 +104,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 	recordBtn.addEventListener('click', () => {
 		game.downloadGIF();
+	});
+	stopBtn.addEventListener('click', () => {
+		game.stopGIF();
 	});
 });

@@ -6,7 +6,7 @@ class GIFExporter {
 	private _GIFURL: Blob;
 	private _GCT: string[];
 	private _recIntervalID: number;
-	private _blobCount: number;
+	private _blobCount: number = 0;
 	private _RGBPixelData: string[] = [];
 	private _indexedPixels: number[] = [];
 	private _colorLookup: {
@@ -14,7 +14,6 @@ class GIFExporter {
 	} = {};
 	private _delay: number = 50;
 	private _duration: number = 5000;
-	private _isCapturing: boolean = false;
 	private _hasNextBlob: boolean = true;
 	private _CTGenerator: ColorTableGenerator;
 
@@ -46,12 +45,21 @@ class GIFExporter {
 	}
 
 	start() {
-		this._isCapturing = true;
 		let blobNumber = 0;
 		/* Capture blobs at this._delay intervals and place them in an array */
 		return new Promise((resolve, reject) => {
+			/**
+			 * TODO: find a better way of adjusting snapshot interval.
+			 */
 			this._recIntervalID = setInterval(() => {
-				if (HTMLCanvasElement.prototype.toBlob) {
+				this.ToBlob(this._canvas, blob => {
+					console.log(blob);
+					this._blobURLs.push(
+						new iBlobURL(blobNumber, URL.createObjectURL(blob))
+					);
+				});
+
+				/* if (HTMLCanvasElement.prototype.toBlob) {
 					this._canvas.toBlob(results => {
 						this._blobURLs.push(
 							new iBlobURL(blobNumber, URL.createObjectURL(results))
@@ -59,15 +67,14 @@ class GIFExporter {
 						blobNumber++;
 					});
 				} else {
-					console.log(this._canvas.toDataURL());
-				}
+					// console.log(this._canvas.toDataURL());
+				} */
 			}, this._delay);
 
 			/* Stop capturing blobs and start processing them. */
 			setTimeout(() => {
 				console.log('​start -> ', 'attempting to stop');
 				this.stop().then(() => {
-					this._isCapturing = false;
 					console.log('​stop -> ', 'has completed inside');
 					console.log(this._blobURLs);
 					resolve();
@@ -77,19 +84,19 @@ class GIFExporter {
 	}
 
 	stop() {
-		return new Promise((resolve, reject) => {
-			if (this._isCapturing) {
-				clearInterval(this._recIntervalID);
-				this.processBlobsInOrder().then(() => {
-					this.getStitchedBlob().then(() => {
-						resolve();
-					});
-				});
-				console.log('​stop -> ', 'has completed outside');
-			} else {
-				reject('Capturing has already complete.');
-			}
-		});
+		alert(`processing GIF`);
+		clearInterval(this._recIntervalID);
+
+		// return new Promise((resolve, reject) => {
+		// 	clearInterval(this._recIntervalID);
+		// 	this.processBlobs().then(() => {
+		// 		this.getStitchedBlob().then(() => {
+		// 			resolve();
+		// 		});
+		// 	});
+		// 	console.log('​stop -> ', 'has completed outside');
+		// 	reject('Capturing has already complete.');
+		// });
 	}
 
 	/* Should capture URL of each image created by the GIFGenerator as image/png to display to the user.
@@ -99,43 +106,24 @@ class GIFExporter {
 	/* run start and instead of giving the user a Blob object it will take that Blob
       and download it to the users device. */
 	download() {
-		this.start().then(GIFURL => {
-			// console.log(GIFURL);
-			this._gifGenerator.download('insideDownload.gif');
+		this.getBlobs(this._canvas).then(() => {
+			console.log(
+				'​GIFExporter -> download -> ',
+				`blob[] filled with ${this._blobURLs}`
+			);
+
+			this.setupCanvas().then(canvas => {
+				// this.getImageData(canvas);
+			});
+		});
+		this._blobURLs.forEach(blob => {
+			this.getImages(blob);
 		});
 	}
 
 	private processBlobs() {
-		return new Promise((resolve, reject) => {
-			let newCTXData: Uint8ClampedArray;
-
-			const canvas2 = document.createElement('canvas') as HTMLCanvasElement;
-			canvas2.setAttribute('width', this._canvas.width.toString());
-			canvas2.setAttribute('height', this._canvas.height.toString());
-			const ctx = canvas2.getContext('2d');
-
-			this._blobURLs.forEach(blob => {
-				const img = new Image();
-				console.log('​privateprocessBlobs -> url', blob._id);
-
-				img.onload = () => {
-					console.log(img.src);
-					ctx.drawImage(img, 0, 0, canvas2.width, canvas2.height);
-					// read new canvas data
-					newCTXData = ctx.getImageData(0, 0, canvas2.width, canvas2.height)
-						.data;
-					this.removeAlpha(newCTXData);
-					this.mapPixelIndex();
-					this._gifGenerator.generateFrame(this._indexedPixels);
-					this.reset();
-					if (img.src === this._blobURLs[this._blobURLs.length - 1]) {
-						console.log('​img.onload -> ', 'inner completed');
-						resolve();
-					}
-				};
-				img.src = blob._url;
-			});
-		});
+		const canvasPromises = this._blobURLs.map(this.getImages);
+		Promise.all(canvasPromises).then(data => console.log(data));
 	}
 
 	private processBlobsInOrder() {
@@ -152,7 +140,9 @@ class GIFExporter {
 	}
 
 	private process(ctx?: CanvasRenderingContext2D) {
+		console.log('​GIFExporter -> privateprocess -> ');
 		let newCTXData: Uint8ClampedArray;
+		let allIndexedImages: any[] = [];
 		return new Promise((resolve, reject) => {
 			const blobURL: iBlobURL = this._blobURLs.shift();
 			if (!blobURL) {
@@ -176,6 +166,7 @@ class GIFExporter {
 				).data;
 				this.removeAlpha(newCTXData);
 				this.mapPixelIndex();
+				allIndexedImages.push(this._indexedPixels);
 				this._gifGenerator.generateFrame(this._indexedPixels).then(_ => {
 					this.reset();
 					this.process(ctx);
@@ -230,5 +221,98 @@ class GIFExporter {
 			color -= color % 51;
 		}
 		return color;
+	}
+
+	private getImages(blob: { _url: any }) {
+		const url = blob._url;
+		return new Promise((resolve, reject) => {
+			let image = new Image();
+
+			image.onload = () => {
+				resolve(image);
+			};
+
+			image.onerror = () => {
+				reject(`${url} did not load as an image correctly`);
+			};
+
+			image.src = url;
+		});
+	}
+
+	/**
+	 * ToBlob Edge fix from Babylon.js
+	 * @param canvas
+	 * @param successCallback
+	 * @param mimeType
+	 */
+	private ToBlob(
+		canvas: HTMLCanvasElement,
+		successCallback: (blob?: Blob) => void,
+		mimeType: string = 'image/png'
+	): void {
+		// We need HTMLCanvasElement.toBlob for HD screenshots
+
+		if (!canvas.toBlob) {
+			//  low performance polyfill based on toDataURL (https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
+
+			canvas.toBlob = function(callback, type, quality) {
+				setTimeout(() => {
+					var binStr = atob(this.toDataURL(type, quality).split(',')[1]),
+						len = binStr.length,
+						arr = new Uint8Array(len);
+
+					for (var i = 0; i < len; i++) {
+						arr[i] = binStr.charCodeAt(i);
+					}
+
+					callback(new Blob([arr]));
+				});
+			};
+		}
+
+		canvas.toBlob(function(blob) {
+			successCallback(blob);
+		}, mimeType);
+	}
+
+	private getBlobs(canvas: HTMLCanvasElement) {
+		/* Get Blob */
+		/* create URL for each blob in Blob[] */
+		/* return Blob[] */
+		return new Promise((resolve, reject) => {
+			console.log('​GIFExporter -> privategetBlobs -> ', `start`);
+			/**
+			 * // TODO: find a better way of adjusting snapshot interval.
+			 */
+			this._recIntervalID = setInterval(() => {
+				this._blobCount++;
+				console.log(
+					'​GIFExporter -> this._recIntervalID -> ',
+					`iteration ${this._blobCount}`
+				);
+				console.log(this._recIntervalID);
+				this.ToBlob(canvas, blob => {
+					this._blobURLs.push(
+						new iBlobURL(this._blobCount, URL.createObjectURL(blob))
+					);
+				});
+			}, this._delay);
+
+			setTimeout(() => {
+				this.stop();
+				resolve();
+			}, this._duration);
+		});
+	}
+
+	private setupCanvas() {
+		return new Promise((resolve, reject) => {
+			const canvas2 = document.createElement('canvas') as HTMLCanvasElement;
+			canvas2.setAttribute('width', this._canvas.width.toString());
+			canvas2.setAttribute('height', this._canvas.height.toString());
+			const ctx = canvas2.getContext('2d');
+			resolve(ctx);
+		});
 	}
 }

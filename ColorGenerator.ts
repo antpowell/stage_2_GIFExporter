@@ -6,27 +6,24 @@ class ColorTableGenerator {
 	} = {};
 
 	generate() {
-		return new Promise((resolve, reject) => {
-			let count = 0;
-			for (let red: number = 0; red < 256; red += this._distribution) {
-				for (let green: number = 0; green < 256; green += this._distribution) {
-					for (let blue: number = 0; blue < 256; blue += this._distribution) {
-						const pixel = this.pad(red) + this.pad(green) + this.pad(blue);
+		let count = 0;
+		for (let red: number = 0; red < 256; red += this._distribution) {
+			for (let green: number = 0; green < 256; green += this._distribution) {
+				for (let blue: number = 0; blue < 256; blue += this._distribution) {
+					const pixel = this.pad(red) + this.pad(green) + this.pad(blue);
 
-						this._colorTable.push(pixel);
+					this._colorTable.push(pixel);
 
-						this._colorLookup[pixel] = count;
+					this._colorLookup[pixel] = count;
 
-						count++;
-					}
+					count++;
 				}
 			}
-			console.log(this._colorTable);
-			resolve({
-				_colorLookup: this._colorLookup,
-				_colorTable: this._colorTable,
-			});
-		});
+		}
+		return {
+			_colorLookup: this._colorLookup,
+			_colorTable: this._colorTable,
+		};
 	}
 
 	private pad(color: number) {

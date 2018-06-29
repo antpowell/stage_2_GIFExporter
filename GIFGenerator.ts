@@ -1,16 +1,19 @@
+/// <reference path="JS/LZWEncoder.js"/>
+
 class GIFGenerator {
-	private _stream: EncodedImage = new EncodedImage();
-	private _width: number;
-	private _height: number;
-	private encodedImage: EncodedImage = new EncodedImage();
-	private _frameIndexedPixels: number[];
-	private _frameCount: number = 0;
-	private _GCT: string[];
+	stream: EncodedImage = new EncodedImage();
+	byteCount: number = 0;
+	width: number;
+	height: number;
+	encodedImage: EncodedImage = new EncodedImage();
+	frameIndexedPixels: number[];
+	frameCount: number = 0;
+	GCT: string[];
 
 	constructor(width: number, height: number, GCT: string[]) {
-		this._width = width;
-		this._height = height;
-		this._GCT = GCT;
+		this.width = width;
+		this.height = height;
+		this.GCT = GCT;
 		console.log(`Generator now running...`);
 	}
 
@@ -21,120 +24,112 @@ class GIFGenerator {
 		this.AppExtGenerator();
 	}
 
-	generateFrame(indexedPixels: number[]) {
-		return new Promise((resolve, reject) => {
-			this._frameIndexedPixels = indexedPixels;
-			this._frameCount += 1;
-			console.log(`generating frame ${this._frameCount}`);
-			this.GCEGenerator();
-			this.imgDescGenerator();
-			this.imgDataGenerator().then(_ => resolve());
-		});
+	generateFrame(indexedPixels: number[], frameCount?: number) {
+		this.frameIndexedPixels = indexedPixels;
+		this.frameCount += 1;
+		console.log(`generating frame ${this.frameCount}`);
+		this.GCEGenerator();
+		this.imgDescGenerator();
+		this.imgDataGenerator();
 	}
 
 	download(filename: string) {
 		this.TrailerGenerator();
 
 		console.log('downloading');
-		console.log(this._stream);
+		console.log(this.stream);
 
 		const download = document.createElement('a');
 		download.download = filename;
 		download.href = URL.createObjectURL(
-			new Blob([new Uint8Array(this._stream.get())], {
+			new Blob([new Uint8Array(this.stream.get())], {
 				type: 'image/gif',
 			})
 		);
 		download.click();
 	}
 
-	getAnimatedGIFBlob() {
-		// return this._stream.get();
-		return new Blob([new Uint8Array(this._stream.get())], {
-			type: 'image/gif',
-		});
+	headerGenerator() {
+		this.stream.writeUTF('GIF89a'); /* GIF Header */
 	}
 
-	private headerGenerator() {
-		this._stream.writeUTF('GIF89a'); /* GIF Header */
+	LSDGenerator() {
+		this.stream.writeLittleEndian(this.width); /* Canvas Width */
+		this.stream.writeLittleEndian(this.height); /* Canvas Height */
+		this.stream.write(0xf7); /* Packed Field */
+		this.stream.write(0); /* Background Color Index */
+		this.stream.write(0); /* Pixel Aspect Ration */
 	}
 
-	private LSDGenerator() {
-		this._stream.writeLittleEndian(this._width); /* Canvas Width */
-		this._stream.writeLittleEndian(this._height); /* Canvas Height */
-		this._stream.write(0xf7); /* Packed Field */
-		this._stream.write(0); /* Background Color Index */
-		this._stream.write(0); /* Pixel Aspect Ration */
+	GCEGenerator() {
+		this.stream.write(0x21); /* Extension Introducer */
+		this.stream.write(0xf9); /* Graphic Control Label */
+		this.stream.write(0x4); /* Byte Size */
+		this.stream.write(0x4); /* Packed Field */
+		this.stream.writeLittleEndian(0x32); /* Delay Time */
+		this.stream.write(0x0); /* Transparent Color Index */
+		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	private GCEGenerator() {
-		this._stream.write(0x21); /* Extension Introducer */
-		this._stream.write(0xf9); /* Graphic Control Label */
-		this._stream.write(0x4); /* Byte Size */
-		this._stream.write(0x4); /* Packed Field */
-		this._stream.writeLittleEndian(0x32); /* Delay Time */
-		this._stream.write(0x0); /* Transparent Color Index */
-		this._stream.write(0x0); /* Block Terminator */
+	imgDescGenerator() {
+		this.stream.write(0x2c); /* Image Seperator Always 2C */
+		this.stream.writeLittleEndian(0x0); /* Image Left */
+		this.stream.writeLittleEndian(0x0); /* Image Top */
+		this.stream.writeLittleEndian(this.width); /* Image Width */
+		this.stream.writeLittleEndian(this.height); /* Image Height */
+		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	private imgDescGenerator() {
-		this._stream.write(0x2c); /* Image Seperator Always 2C */
-		this._stream.writeLittleEndian(0x0); /* Image Left */
-		this._stream.writeLittleEndian(0x0); /* Image Top */
-		this._stream.writeLittleEndian(this._width); /* Image Width */
-		this._stream.writeLittleEndian(this._height); /* Image Height */
-		this._stream.write(0x0); /* Block Terminator */
-	}
-
-	private AppExtGenerator() {
-		this._stream.write(0x21); /* extension introducer */
-		this._stream.write(0xff); /* app extension label */
-		this._stream.write(11); /* block size */
-		this._stream.writeUTF('NETSCAPE' + '2.0'); /* app id + auth code */
-		this._stream.write(3); /* sub-block size */
-		this._stream.write(1); /* loop sub-block id */
-		this._stream.writeLittleEndian(
+	AppExtGenerator() {
+		this.stream.write(0x21); /* extension introducer */
+		this.stream.write(0xff); /* app extension label */
+		this.stream.write(11); /* block size */
+		this.stream.writeUTF('NETSCAPE' + '2.0'); /* app id + auth code */
+		this.stream.write(3); /* sub-block size */
+		this.stream.write(1); /* loop sub-block id */
+		this.stream.writeLittleEndian(
 			0
 		); /* loop count (extra iterations, 0=repeat forever) */
-		this._stream.write(0); /* Block Terminator */
+		this.stream.write(0); /* Block Terminator */
 	}
 
-	private TrailerGenerator() {
-		this._stream.write(0x3b); /* Trailer Marker */
+	TrailerGenerator() {
+		this.stream.write(0x3b); /* Trailer Marker */
 		console.log(`Generator now finished.`);
 	}
 
-	private GCTWriter() {
+	GCTWriter() {
 		let count = 0;
 
-		this._GCT.forEach(color => {
+		this.GCT.forEach(color => {
 			count += 3;
-			this._stream.writeColor(color);
+			this.stream.writeColor(color);
 		});
 
 		for (let i = count; i < 3 * 256; i++) {
-			this._stream.write(0);
+			this.stream.write(0);
 		}
 	}
 
-	private imgDataGenerator() {
-		return new Promise((resolve, reject) => {
-			const encoder = new LZWEncoder(
-				this._width,
-				this._height,
-				this._frameIndexedPixels,
-				8
-			);
-			encoder.encode(this._stream).then(() => {
-				console.log(`completed frame ${this._frameCount}`);
-				resolve();
-			});
-		});
+	imgDataGenerator() {
+		const encoder = new LZWEncoder(
+			this.width,
+			this.height,
+			this.frameIndexedPixels,
+			8
+		);
+		encoder.encode(this.stream);
+		console.log(`completed frame ${this.frameCount}`);
 	}
 
-	private LCTGenerator() {}
+	LCTGenerator() {}
 
-	private PlainTextExtGenerator() {}
+	PlainTextExtGenerator() {}
 
-	private CommentExtGenerator() {}
+	CommentExtGenerator() {}
+
+	writeLittleEndian(num: number) {
+		this.stream.write(num & 0xff);
+		this.stream.write((num >> 8) & 0xff);
+	}
 }
