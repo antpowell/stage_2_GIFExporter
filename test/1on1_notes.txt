@@ -1,0 +1,16 @@
+#Restructer Folders
+###GE
+###PG
+###Testing
+
+#Rename Files to Match Class names
+#Correct version of TypeScript
+
+#!Use working with Babylon Viewer
+#!Gulp Server
+#!Get GLTF from fiddler
+#Meeting Mon afternoon || Tues
+#Add NueQuant
+#Ensure CELA compliance
+#Review BABYLON
+#Resize on WEBGL ??Check how DOM resizes images??

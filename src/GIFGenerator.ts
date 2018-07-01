@@ -1,4 +1,4 @@
-/// <reference path="JS/LZWEncoder.js"/>
+///<reference path = 'JS/LZWEncoder.js'/>
 
 class GIFGenerator {
 	stream: EncodedImage = new EncodedImage();
@@ -43,7 +43,7 @@ class GIFGenerator {
 		download.download = filename;
 		download.href = URL.createObjectURL(
 			new Blob([new Uint8Array(this.stream.get())], {
-				type: 'image/gif'
+				type: 'image/gif',
 			})
 		);
 		download.click();

@@ -4,6 +4,7 @@
   "description": "",
   "main": "NewIndex.js",
   "dependencies": {
+    "@types/babylon": "^6.16.3",
     "@types/webgl2": "0.0.4",
     "npm": "^6.1.0"
   },
