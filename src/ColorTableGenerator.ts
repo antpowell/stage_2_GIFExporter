@@ -1,4 +1,4 @@
-class ColorTableGenerator {
+export class ColorTableGenerator {
 	private _colorTable: string[] = [];
 	private _distribution = 51;
 	private _colorLookup: {
@@ -22,7 +22,7 @@ class ColorTableGenerator {
 		}
 		return {
 			_colorLookup: this._colorLookup,
-			_colorTable: this._colorTable,
+			_colorTable: this._colorTable
 		};
 	}
 

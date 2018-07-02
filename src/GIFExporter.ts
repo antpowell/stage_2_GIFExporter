@@ -1,4 +1,6 @@
-class GIFExporter {
+import { GIFGenerator } from './GIFGenerator';
+import { ColorTableGenerator } from './ColorTableGenerator';
+export class GIFExporter {
 	private _engine: BABYLON.Engine;
 	private _canvas: HTMLCanvasElement;
 	private _delay: number;
@@ -22,8 +24,8 @@ class GIFExporter {
 		this._duration = options.duration;
 		this._GCT = options.GCT || colorGenerator._colorTable;
 		this._colorLookUpTable = colorGenerator._colorLookup;
-		this._width = (engine.getRenderWidth() / 2) | 0;
-		this._height = (engine.getRenderHeight() / 2) | 0;
+		this._width = engine.getRenderWidth();
+		this._height = engine.getRenderHeight();
 		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GCT);
 		this._gifGenerator.init();
 	}
@@ -57,15 +59,13 @@ class GIFExporter {
 				const gl =
 					this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
 				const pixels = new Uint8Array(
-					((gl.drawingBufferWidth / 2) | 0) *
-						((gl.drawingBufferHeight / 2) | 0) *
-						4
+					gl.drawingBufferWidth * gl.drawingBufferHeight * 4
 				);
 				gl.readPixels(
 					0,
 					0,
-					(gl.drawingBufferWidth / 2) | 0,
-					(gl.drawingBufferHeight / 2) | 0,
+					gl.drawingBufferWidth,
+					gl.drawingBufferHeight,
 					gl.RGBA,
 					gl.UNSIGNED_BYTE,
 					pixels

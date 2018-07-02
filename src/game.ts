@@ -1,4 +1,5 @@
-class Game {
+import { GIFExporter } from './GIFExporter';
+export class Game {
 	private _canvas: HTMLCanvasElement;
 	private _engine: BABYLON.Engine;
 	private _scene: BABYLON.Scene;
@@ -9,11 +10,11 @@ class Game {
 	constructor(canvasElement: string) {
 		this._canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
 		this._engine = new BABYLON.Engine(this._canvas, true, {
-			preserveDrawingBuffer: true,
+			preserveDrawingBuffer: true
 		});
 		this._gifExporter = new GIFExporter(this._engine, {
 			delay: 60,
-			duration: 1000,
+			duration: 1000
 		});
 	}
 
@@ -46,7 +47,7 @@ class Game {
 			'sphere',
 			{
 				segments: 16,
-				diameter: 2,
+				diameter: 2
 			},
 			this._scene
 		);
@@ -60,7 +61,7 @@ class Game {
 			{
 				width: 6,
 				height: 6,
-				subdivisions: 2,
+				subdivisions: 2
 			},
 			this._scene
 		);

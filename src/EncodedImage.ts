@@ -1,4 +1,4 @@
-class EncodedImage {
+export class EncodedImage {
 	data: number[] = [];
 
 	constructor() {}
