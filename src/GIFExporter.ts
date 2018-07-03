@@ -15,6 +15,7 @@ export class GIFExporter {
 	private _imageDataCollection: Uint8Array[] = [];
 	private _gifGenerator: GIFGenerator;
 	private _colorLookUpTable: { [index: string]: number };
+	private _colorTableGenerator: ColorTableGenerator;
 
 	constructor(
 		engine: BABYLON.Engine,
@@ -93,7 +94,7 @@ export class GIFExporter {
 			imageDataCollection.forEach(async imgData => {
 				imgData = (await this.flipFrame(imgData)) as Uint8Array;
 				const rgbData = this.removeAlpha(imgData);
-				const indexedData = this.mapPixelIndex(rgbData);
+				const indexedData = this.mapPixelIndex(rgbData[0] as string[]);
 				this._gifGenerator.generateFrame(indexedData);
 				if (--count === 0) resolve();
 			});
@@ -132,9 +133,9 @@ export class GIFExporter {
 		let RGBNumerical: number[] = [];
 		for (let i = 0; i < colorArray.length; i += 4) {
 			const pixel =
-				this.pad(this.snapColor(colorArray[i])) +
-				this.pad(this.snapColor(colorArray[i + 1])) +
-				this.pad(this.snapColor(colorArray[i + 2]));
+				this.pad(colorArray[i]) +
+				this.pad(colorArray[i + 1]) +
+				this.pad(colorArray[i + 2]);
 
 			RGBPixelData.push(pixel);
 			RGBNumerical.push(colorArray[i]);
@@ -142,7 +143,7 @@ export class GIFExporter {
 			RGBNumerical.push(colorArray[i + 2]);
 		}
 
-		return RGBNumerical;
+		return [RGBPixelData, RGBNumerical];
 	}
 
 	private pad(color: number) {
@@ -153,19 +154,14 @@ export class GIFExporter {
 		}
 	}
 
-	private snapColor(color: number) {
-		if (color % 51 > Math.floor(51 / 2)) {
-			color += 51 - (color % 51);
-		} else {
-			color -= color % 51;
-		}
-		return color;
-	}
-
 	private mapPixelIndex(rgbData: string[]) {
 		const indexedPixels: number[] = [];
 		rgbData.forEach(pixel => {
-			indexedPixels.push(this._colorLookUpTable[pixel]);
+			if (this._colorLookUpTable[pixel]) {
+				indexedPixels.push(this._colorLookUpTable[pixel]);
+			} else {
+				indexedPixels.push(this._colorTableGenerator.lookupRGB(pixel));
+			}
 		});
 		return indexedPixels;
 	}
@@ -187,28 +183,24 @@ export class GIFExporter {
 		);
 		const img = (await this.flipFrame(pixels)) as Uint8Array;
 		const RBGData = this.removeAlpha(img);
-		// console.log(RBGData);
 
-		return RBGData;
+		return RBGData[1];
 	}
 
 	private async colorSetup() {
-		const RGBFrame = await this.getColorFrame();
-		// console.log(RGBFrame);
-		const colorGenerator = (await new ColorTableGenerator(
-			RGBFrame
-		).generate()) as {
+		const RGBFrame = (await this.getColorFrame()) as number[];
+		this._colorTableGenerator = new ColorTableGenerator(RGBFrame);
+		let color = (await this._colorTableGenerator.generate()) as {
 			_colorLookup: {
 				[index: string]: number;
 			};
 			_colorTable: string[];
 		};
-		console.log(`colorGenerator`, colorGenerator);
-		this._colorLookUpTable = colorGenerator._colorLookup;
-		this._GCT = colorGenerator._colorTable;
-		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GCT);
-		// console.log(this._GCT);
 
+		console.log(color);
+		this._colorLookUpTable = color._colorLookup;
+		this._GCT = color._colorTable;
+		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GCT);
 		this._gifGenerator.init();
 	}
 }

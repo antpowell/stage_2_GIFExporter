@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({40:[function(require,module,exports) {
+})({16:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -565,37 +565,18 @@ var ColorTableGenerator = /** @class */function () {
         this._GCT = [];
         this._distribution = 51;
         this._colorLookup = {};
-        // const RGB:number = this.getNumericalRGB(frame);
-        this._neuQuant = new NeuQuant_1.default(frame, 10);
+        this._neuQuant = new NeuQuant_1.default(frame, 20);
         this._neuQuant.buildColormap();
         this._colorTable = this._neuQuant.getColormap();
-        console.log(this._colorTable);
     }
-    // generate() {
-    // 	let count = 0;
-    // 	for (let red: number = 0; red < 256; red += this._distribution) {
-    // 		for (let green: number = 0; green < 256; green += this._distribution) {
-    // 			for (let blue: number = 0; blue < 256; blue += this._distribution) {
-    // 				const pixel = this.pad(red) + this.pad(green) + this.pad(blue);
-    // 				this._colorTable.push(pixel);
-    // 				this._colorLookup[pixel] = count;
-    // 				count++;
-    // 			}
-    // 		}
-    // 	}
-    // 	return {
-    // 		_colorLookup: this._colorLookup,
-    // 		_colorTable: this._colorTable
-    // 	};
-    // }
     ColorTableGenerator.prototype.generate = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var pixel;
+            var pixel = '';
             var count = 0;
-            _this._colorTable.forEach(function (color, index) {
-                pixel + _this.pad(color);
-                if (index !== 0 && index % 3 === 0) {
+            _this._colorTable.forEach(function (value, index, array) {
+                pixel += _this.pad(value);
+                if ((index + 1) % 3 === 0) {
                     _this._GCT.push(pixel);
                     _this._colorLookup[pixel] = count;
                     count++;
@@ -608,6 +589,13 @@ var ColorTableGenerator = /** @class */function () {
             });
         });
     };
+    ColorTableGenerator.prototype.lookupRGB = function (pixel) {
+        var R = parseInt(pixel.substr(0, 2), 16);
+        var G = parseInt(pixel.substr(2, 2), 16);
+        var B = parseInt(pixel.substr(4, 2), 16);
+        var pixelIndex = this._neuQuant.lookupRGB(R, G, B);
+        return pixelIndex;
+    };
     ColorTableGenerator.prototype.pad = function (color) {
         if (color < 16) {
             return "0" + color.toString(16);
@@ -618,7 +606,7 @@ var ColorTableGenerator = /** @class */function () {
     return ColorTableGenerator;
 }();
 exports.ColorTableGenerator = ColorTableGenerator;
-},{"./js/NeuQuant":40}],26:[function(require,module,exports) {
+},{"./js/NeuQuant":16}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -647,7 +635,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '64463' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '61800' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -788,5 +776,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[26,12], null)
+},{}]},{},[29,12], null)
 //# sourceMappingURL=/ColorTableGenerator.d4a2436a.map

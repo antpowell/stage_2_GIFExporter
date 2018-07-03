@@ -44,7 +44,7 @@ export class GIFGenerator {
 		download.download = filename;
 		download.href = URL.createObjectURL(
 			new Blob([new Uint8Array(this.stream.get())], {
-				type: 'image/gif'
+				type: 'image/gif',
 			})
 		);
 		download.click();
@@ -67,7 +67,7 @@ export class GIFGenerator {
 		this.stream.write(0xf9); /* Graphic Control Label */
 		this.stream.write(0x4); /* Byte Size */
 		this.stream.write(0x4); /* Packed Field */
-		this.stream.writeLittleEndian(0x32); /* Delay Time */
+		this.stream.writeLittleEndian(0x9); /* Delay Time */
 		this.stream.write(0x0); /* Transparent Color Index */
 		this.stream.write(0x0); /* Block Terminator */
 	}

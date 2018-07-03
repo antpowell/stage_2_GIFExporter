@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({10:[function(require,module,exports) {
+})({11:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -140,12 +140,12 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],13:[function(require,module,exports) {
+},{}],14:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodedImage_1 = require("./EncodedImage");
-///<reference path = 'JS/LZWEncoder.js'/>
+///<reference path = '../JS/LZWEncoder.js'/>
 var GIFGenerator = /** @class */function () {
     function GIFGenerator(width, height, GCT) {
         this.stream = new EncodedImage_1.EncodedImage();
@@ -197,7 +197,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.write(0xf9); /* Graphic Control Label */
         this.stream.write(0x4); /* Byte Size */
         this.stream.write(0x4); /* Packed Field */
-        this.stream.writeLittleEndian(0x32); /* Delay Time */
+        this.stream.writeLittleEndian(0x9); /* Delay Time */
         this.stream.write(0x0); /* Transparent Color Index */
         this.stream.write(0x0); /* Block Terminator */
     };
@@ -249,7 +249,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":10}],26:[function(require,module,exports) {
+},{"./EncodedImage":11}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -278,7 +278,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '64463' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '61800' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -419,5 +419,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[26,13], null)
+},{}]},{},[29,14], null)
 //# sourceMappingURL=/GIFGenerator.d1b878e2.map

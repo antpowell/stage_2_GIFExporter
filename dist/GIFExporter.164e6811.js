@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({10:[function(require,module,exports) {
+})({11:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -140,12 +140,12 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],13:[function(require,module,exports) {
+},{}],14:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodedImage_1 = require("./EncodedImage");
-///<reference path = 'JS/LZWEncoder.js'/>
+///<reference path = '../JS/LZWEncoder.js'/>
 var GIFGenerator = /** @class */function () {
     function GIFGenerator(width, height, GCT) {
         this.stream = new EncodedImage_1.EncodedImage();
@@ -197,7 +197,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.write(0xf9); /* Graphic Control Label */
         this.stream.write(0x4); /* Byte Size */
         this.stream.write(0x4); /* Packed Field */
-        this.stream.writeLittleEndian(0x32); /* Delay Time */
+        this.stream.writeLittleEndian(0x9); /* Delay Time */
         this.stream.write(0x0); /* Transparent Color Index */
         this.stream.write(0x0); /* Block Terminator */
     };
@@ -249,7 +249,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":10}],40:[function(require,module,exports) {
+},{"./EncodedImage":11}],16:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -711,37 +711,18 @@ var ColorTableGenerator = /** @class */function () {
         this._GCT = [];
         this._distribution = 51;
         this._colorLookup = {};
-        // const RGB:number = this.getNumericalRGB(frame);
-        this._neuQuant = new NeuQuant_1.default(frame, 10);
+        this._neuQuant = new NeuQuant_1.default(frame, 20);
         this._neuQuant.buildColormap();
         this._colorTable = this._neuQuant.getColormap();
-        console.log(this._colorTable);
     }
-    // generate() {
-    // 	let count = 0;
-    // 	for (let red: number = 0; red < 256; red += this._distribution) {
-    // 		for (let green: number = 0; green < 256; green += this._distribution) {
-    // 			for (let blue: number = 0; blue < 256; blue += this._distribution) {
-    // 				const pixel = this.pad(red) + this.pad(green) + this.pad(blue);
-    // 				this._colorTable.push(pixel);
-    // 				this._colorLookup[pixel] = count;
-    // 				count++;
-    // 			}
-    // 		}
-    // 	}
-    // 	return {
-    // 		_colorLookup: this._colorLookup,
-    // 		_colorTable: this._colorTable
-    // 	};
-    // }
     ColorTableGenerator.prototype.generate = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var pixel;
+            var pixel = '';
             var count = 0;
-            _this._colorTable.forEach(function (color, index) {
-                pixel + _this.pad(color);
-                if (index !== 0 && index % 3 === 0) {
+            _this._colorTable.forEach(function (value, index, array) {
+                pixel += _this.pad(value);
+                if ((index + 1) % 3 === 0) {
                     _this._GCT.push(pixel);
                     _this._colorLookup[pixel] = count;
                     count++;
@@ -754,6 +735,13 @@ var ColorTableGenerator = /** @class */function () {
             });
         });
     };
+    ColorTableGenerator.prototype.lookupRGB = function (pixel) {
+        var R = parseInt(pixel.substr(0, 2), 16);
+        var G = parseInt(pixel.substr(2, 2), 16);
+        var B = parseInt(pixel.substr(4, 2), 16);
+        var pixelIndex = this._neuQuant.lookupRGB(R, G, B);
+        return pixelIndex;
+    };
     ColorTableGenerator.prototype.pad = function (color) {
         if (color < 16) {
             return "0" + color.toString(16);
@@ -764,7 +752,7 @@ var ColorTableGenerator = /** @class */function () {
     return ColorTableGenerator;
 }();
 exports.ColorTableGenerator = ColorTableGenerator;
-},{"./js/NeuQuant":40}],14:[function(require,module,exports) {
+},{"./js/NeuQuant":16}],13:[function(require,module,exports) {
 "use strict";
 
 var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -932,7 +920,7 @@ var GIFExporter = /** @class */function () {
                     count = imageDataCollection.length;
                     imageDataCollection.forEach(function (imgData) {
                         return __awaiter(_this, void 0, void 0, function () {
-                            var rgbData, colorGenerator, indexedData;
+                            var rgbData, indexedData;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -940,10 +928,7 @@ var GIFExporter = /** @class */function () {
                                     case 1:
                                         imgData = _a.sent();
                                         rgbData = this.removeAlpha(imgData);
-                                        return [4 /*yield*/, new ColorTableGenerator_1.ColorTableGenerator(rgbData).generate()];
-                                    case 2:
-                                        colorGenerator = _a.sent();
-                                        indexedData = this.mapPixelIndex(rgbData);
+                                        indexedData = this.mapPixelIndex(rgbData[0]);
                                         this._gifGenerator.generateFrame(indexedData);
                                         if (--count === 0) resolve();
                                         return [2 /*return*/];
@@ -980,13 +965,13 @@ var GIFExporter = /** @class */function () {
         var RGBPixelData = [];
         var RGBNumerical = [];
         for (var i = 0; i < colorArray.length; i += 4) {
-            var pixel = this.pad(this.snapColor(colorArray[i])) + this.pad(this.snapColor(colorArray[i + 1])) + this.pad(this.snapColor(colorArray[i + 2]));
+            var pixel = this.pad(colorArray[i]) + this.pad(colorArray[i + 1]) + this.pad(colorArray[i + 2]);
             RGBPixelData.push(pixel);
             RGBNumerical.push(colorArray[i]);
             RGBNumerical.push(colorArray[i + 1]);
             RGBNumerical.push(colorArray[i + 2]);
         }
-        return RGBNumerical;
+        return [RGBPixelData, RGBNumerical];
     };
     GIFExporter.prototype.pad = function (color) {
         if (color < 16) {
@@ -995,19 +980,15 @@ var GIFExporter = /** @class */function () {
             return color.toString(16);
         }
     };
-    GIFExporter.prototype.snapColor = function (color) {
-        if (color % 51 > Math.floor(51 / 2)) {
-            color += 51 - color % 51;
-        } else {
-            color -= color % 51;
-        }
-        return color;
-    };
     GIFExporter.prototype.mapPixelIndex = function (rgbData) {
         var _this = this;
         var indexedPixels = [];
         rgbData.forEach(function (pixel) {
-            indexedPixels.push(_this._colorLookUpTable[pixel]);
+            if (_this._colorLookUpTable[pixel]) {
+                indexedPixels.push(_this._colorLookUpTable[pixel]);
+            } else {
+                indexedPixels.push(_this._colorTableGenerator.lookupRGB(pixel));
+            }
         });
         return indexedPixels;
     };
@@ -1024,29 +1005,28 @@ var GIFExporter = /** @class */function () {
                     case 1:
                         img = _a.sent();
                         RBGData = this.removeAlpha(img);
-                        // console.log(RBGData);
-                        return [2 /*return*/, RBGData];
+                        return [2 /*return*/, RBGData[1]];
                 }
             });
         });
     };
     GIFExporter.prototype.colorSetup = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var RGBFrame, colorGenerator;
+            var RGBFrame, color;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         return [4 /*yield*/, this.getColorFrame()];
                     case 1:
                         RGBFrame = _a.sent();
-                        return [4 /*yield*/, new ColorTableGenerator_1.ColorTableGenerator(RGBFrame).generate()];
+                        this._colorTableGenerator = new ColorTableGenerator_1.ColorTableGenerator(RGBFrame);
+                        return [4 /*yield*/, this._colorTableGenerator.generate()];
                     case 2:
-                        colorGenerator = _a.sent();
-                        console.log(colorGenerator);
-                        this._colorLookUpTable = colorGenerator._colorLookup;
-                        this._GCT = colorGenerator._colorTable;
+                        color = _a.sent();
+                        console.log(color);
+                        this._colorLookUpTable = color._colorLookup;
+                        this._GCT = color._colorTable;
                         this._gifGenerator = new GIFGenerator_1.GIFGenerator(this._width, this._height, this._GCT);
-                        // console.log(this._GCT);
                         this._gifGenerator.init();
                         return [2 /*return*/];
                 }
@@ -1056,7 +1036,7 @@ var GIFExporter = /** @class */function () {
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./GIFGenerator":13,"./ColorTableGenerator":12}],26:[function(require,module,exports) {
+},{"./GIFGenerator":14,"./ColorTableGenerator":12}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1085,7 +1065,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '64463' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '61800' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1226,5 +1206,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[26,14], null)
+},{}]},{},[29,13], null)
 //# sourceMappingURL=/GIFExporter.164e6811.map
