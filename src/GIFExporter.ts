@@ -93,9 +93,6 @@ export class GIFExporter {
 			imageDataCollection.forEach(async imgData => {
 				imgData = (await this.flipFrame(imgData)) as Uint8Array;
 				const rgbData = this.removeAlpha(imgData);
-				const colorGenerator = await new ColorTableGenerator(
-					rgbData
-				).generate();
 				const indexedData = this.mapPixelIndex(rgbData);
 				this._gifGenerator.generateFrame(indexedData);
 				if (--count === 0) resolve();
@@ -206,7 +203,7 @@ export class GIFExporter {
 			};
 			_colorTable: string[];
 		};
-		console.log(colorGenerator);
+		console.log(`colorGenerator`, colorGenerator);
 		this._colorLookUpTable = colorGenerator._colorLookup;
 		this._GCT = colorGenerator._colorTable;
 		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GCT);

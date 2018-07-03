@@ -103,153 +103,281 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({9:[function(require,module,exports) {
-"use strict";
+})({22:[function(require,module,exports) {
+/**
+ * This class handles LZW encoding
+ * Adapted from Jef Poskanzer's Java port by way of J. M. G. Elliott.
+ * @author Kevin Weiner (original Java version - kweiner@fmsware.com)
+ * @author Thibault Imbert (AS3 version - bytearray.org)
+ * @author Kevin Kwok (JavaScript version - https://github.com/antimatter15/jsgif)
+ * @version 0.1 AS3 implementation
+ */
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var EncodedImage = /** @class */function () {
-    function EncodedImage() {
-        this.data = [];
-    }
-    EncodedImage.prototype.get = function () {
-        return this.data;
-    };
-    EncodedImage.prototype.write = function (byte) {
-        this.data.push(byte);
-    };
-    EncodedImage.prototype.writeArray = function (array, arraySize) {
-        for (var i = 0; i < arraySize; i++) {
-            this.write(array[i]);
-        }
-    };
-    EncodedImage.prototype.writeUTF = function (UTF) {
-        for (var i = 0; i < UTF.length; i++) {
-            this.write(UTF.charCodeAt(i));
-        }
-    };
-    EncodedImage.prototype.writeColor = function (color) {
-        for (var i = 0; i < color.length; i += 2) {
-            var intValue = parseInt(color[i] + color[i + 1], 16);
-            this.write(intValue);
-        }
-    };
-    EncodedImage.prototype.writeLittleEndian = function (num) {
-        this.write(num & 0xff);
-        this.write(num >> 8 & 0xff);
-    };
-    return EncodedImage;
-}();
-exports.EncodedImage = EncodedImage;
-},{}],11:[function(require,module,exports) {
-"use strict";
+LZWEncoder = function LZWEncoder() {
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var EncodedImage_1 = require("./EncodedImage");
-///<reference path = '../JS/LZWEncoder.js'/>
-var GIFGenerator = /** @class */function () {
-    function GIFGenerator(width, height, GCT) {
-        this.stream = new EncodedImage_1.EncodedImage();
-        this.byteCount = 0;
-        this.encodedImage = new EncodedImage_1.EncodedImage();
-        this.frameCount = 0;
-        this.width = width;
-        this.height = height;
-        this.GCT = GCT;
-        console.log("Generator now running...");
-    }
-    GIFGenerator.prototype.init = function () {
-        this.headerGenerator();
-        this.LSDGenerator();
-        this.GCTWriter();
-        this.AppExtGenerator();
-    };
-    GIFGenerator.prototype.generateFrame = function (indexedPixels, frameCount) {
-        this.frameIndexedPixels = indexedPixels;
-        this.frameCount += 1;
-        console.log("generating frame " + this.frameCount);
-        this.GCEGenerator();
-        this.imgDescGenerator();
-        this.imgDataGenerator();
-    };
-    GIFGenerator.prototype.download = function (filename) {
-        this.TrailerGenerator();
-        console.log('downloading');
-        console.log(this.stream);
-        var download = document.createElement('a');
-        download.download = filename;
-        download.href = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
-            type: 'image/gif'
-        }));
-        download.click();
-    };
-    GIFGenerator.prototype.headerGenerator = function () {
-        this.stream.writeUTF('GIF89a'); /* GIF Header */
-    };
-    GIFGenerator.prototype.LSDGenerator = function () {
-        this.stream.writeLittleEndian(this.width); /* Canvas Width */
-        this.stream.writeLittleEndian(this.height); /* Canvas Height */
-        this.stream.write(0xf7); /* Packed Field */
-        this.stream.write(0); /* Background Color Index */
-        this.stream.write(0); /* Pixel Aspect Ration */
-    };
-    GIFGenerator.prototype.GCEGenerator = function () {
-        this.stream.write(0x21); /* Extension Introducer */
-        this.stream.write(0xf9); /* Graphic Control Label */
-        this.stream.write(0x4); /* Byte Size */
-        this.stream.write(0x4); /* Packed Field */
-        this.stream.writeLittleEndian(0x32); /* Delay Time */
-        this.stream.write(0x0); /* Transparent Color Index */
-        this.stream.write(0x0); /* Block Terminator */
-    };
-    GIFGenerator.prototype.imgDescGenerator = function () {
-        this.stream.write(0x2c); /* Image Seperator Always 2C */
-        this.stream.writeLittleEndian(0x0); /* Image Left */
-        this.stream.writeLittleEndian(0x0); /* Image Top */
-        this.stream.writeLittleEndian(this.width); /* Image Width */
-        this.stream.writeLittleEndian(this.height); /* Image Height */
-        this.stream.write(0x0); /* Block Terminator */
-    };
-    GIFGenerator.prototype.AppExtGenerator = function () {
-        this.stream.write(0x21); /* extension introducer */
-        this.stream.write(0xff); /* app extension label */
-        this.stream.write(11); /* block size */
-        this.stream.writeUTF('NETSCAPE' + '2.0'); /* app id + auth code */
-        this.stream.write(3); /* sub-block size */
-        this.stream.write(1); /* loop sub-block id */
-        this.stream.writeLittleEndian(0); /* loop count (extra iterations, 0=repeat forever) */
-        this.stream.write(0); /* Block Terminator */
-    };
-    GIFGenerator.prototype.TrailerGenerator = function () {
-        this.stream.write(0x3b); /* Trailer Marker */
-        console.log("Generator now finished.");
-    };
-    GIFGenerator.prototype.GCTWriter = function () {
-        var _this = this;
-        var count = 0;
-        this.GCT.forEach(function (color) {
-            count += 3;
-            _this.stream.writeColor(color);
-        });
-        for (var i = count; i < 3 * 256; i++) {
-            this.stream.write(0);
-        }
-    };
-    GIFGenerator.prototype.imgDataGenerator = function () {
-        var encoder = new LZWEncoder(this.width, this.height, this.frameIndexedPixels, 8);
-        encoder.encode(this.stream);
-        console.log("completed frame " + this.frameCount);
-    };
-    GIFGenerator.prototype.LCTGenerator = function () {};
-    GIFGenerator.prototype.PlainTextExtGenerator = function () {};
-    GIFGenerator.prototype.CommentExtGenerator = function () {};
-    GIFGenerator.prototype.writeLittleEndian = function (num) {
-        this.stream.write(num & 0xff);
-        this.stream.write(num >> 8 & 0xff);
-    };
-    return GIFGenerator;
-}();
-exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":9}],9:[function(require,module,exports) {
+	var exports = {};
+	var EOF = -1;
+	var imgW;
+	var imgH;
+	var pixAry;
+	var initCodeSize;
+	var remaining;
+	var curPixel;
+
+	// GIFCOMPR.C - GIF Image compression routines
+	// Lempel-Ziv compression based on 'compress'. GIF modifications by
+	// David Rowley (mgardi@watdcsu.waterloo.edu)
+	// General DEFINEs
+
+	var BITS = 12;
+	var HSIZE = 5003; // 80% occupancy
+
+	// GIF Image compression - modified 'compress'
+	// Based on: compress.c - File compression ala IEEE Computer, June 1984.
+	// By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
+	// Jim McKie (decvax!mcvax!jim)
+	// Steve Davies (decvax!vax135!petsd!peora!srd)
+	// Ken Turkowski (decvax!decwrl!turtlevax!ken)
+	// James A. Woods (decvax!ihnp4!ames!jaw)
+	// Joe Orost (decvax!vax135!petsd!joe)
+
+	var n_bits; // number of bits/code
+	var maxbits = BITS; // user settable max # bits/code
+	var maxcode; // maximum code, given n_bits
+	var maxmaxcode = 1 << BITS; // should NEVER generate this code
+	var htab = [];
+	var codetab = [];
+	var hsize = HSIZE; // for dynamic table sizing
+	var free_ent = 0; // first unused entry
+
+	// block compression parameters -- after all codes are used up,
+	// and compression rate changes, start over.
+
+	var clear_flg = false;
+
+	// Algorithm: use open addressing double hashing (no chaining) on the
+	// prefix code / next character combination. We do a variant of Knuth's
+	// algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+	// secondary probe. Here, the modular division first probe is gives way
+	// to a faster exclusive-or manipulation. Also do block compression with
+	// an adaptive reset, whereby the code table is cleared when the compression
+	// ratio decreases, but after the table fills. The variable-length output
+	// codes are re-sized at this point, and a special CLEAR code is generated
+	// for the decompressor. Late addition: construct the table according to
+	// file size for noticeable speed improvement on small files. Please direct
+	// questions about this implementation to ames!jaw.
+
+	var g_init_bits;
+	var ClearCode;
+	var EOFCode;
+
+	// output
+	// Output the given code.
+	// Inputs:
+	// code: A n_bits-bit integer. If == -1, then EOF. This assumes
+	// that n_bits =< wordsize - 1.
+	// Outputs:
+	// Outputs code to the file.
+	// Assumptions:
+	// Chars are 8 bits long.
+	// Algorithm:
+	// Maintain a BITS character long buffer (so that 8 codes will
+	// fit in it exactly). Use the VAX insv instruction to insert each
+	// code in turn. When the buffer fills up empty it and start over.
+
+	var cur_accum = 0;
+	var cur_bits = 0;
+	var masks = [0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F, 0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF];
+
+	// Number of characters so far in this 'packet'
+	var a_count;
+
+	// Define the storage for the packet accumulator
+	var accum = [];
+
+	var LZWEncoder = exports.LZWEncoder = function LZWEncoder(width, height, pixels, color_depth) {
+		imgW = width;
+		imgH = height;
+		pixAry = pixels;
+		initCodeSize = Math.max(2, color_depth);
+	};
+
+	// Add a character to the end of the current packet, and if it is 254
+	// characters, flush the packet to disk.
+	var char_out = function char_out(c, outs) {
+		accum[a_count++] = c;
+		if (a_count >= 254) flush_char(outs);
+	};
+
+	// Clear out the hash table
+	// table clear for block compress
+
+	var cl_block = function cl_block(outs) {
+		cl_hash(hsize);
+		free_ent = ClearCode + 2;
+		clear_flg = true;
+		output(ClearCode, outs);
+	};
+
+	// reset code table
+	var cl_hash = function cl_hash(hsize) {
+		for (var i = 0; i < hsize; ++i) {
+			htab[i] = -1;
+		}
+	};
+
+	var compress = exports.compress = function compress(init_bits, outs) {
+
+		var fcode;
+		var i; /* = 0 */
+		var c;
+		var ent;
+		var disp;
+		var hsize_reg;
+		var hshift;
+
+		// Set up the globals: g_init_bits - initial number of bits
+		g_init_bits = init_bits;
+
+		// Set up the necessary values
+		clear_flg = false;
+		n_bits = g_init_bits;
+		maxcode = MAXCODE(n_bits);
+
+		ClearCode = 1 << init_bits - 1;
+		EOFCode = ClearCode + 1;
+		free_ent = ClearCode + 2;
+
+		a_count = 0; // clear packet
+
+		ent = nextPixel();
+
+		hshift = 0;
+		for (fcode = hsize; fcode < 65536; fcode *= 2) {
+			++hshift;
+		}hshift = 8 - hshift; // set hash code range bound
+
+		hsize_reg = hsize;
+		cl_hash(hsize_reg); // clear hash table
+
+		output(ClearCode, outs);
+
+		outer_loop: while ((c = nextPixel()) != EOF) {
+			fcode = (c << maxbits) + ent;
+			i = c << hshift ^ ent; // xor hashing
+
+			if (htab[i] == fcode) {
+				ent = codetab[i];
+				continue;
+			} else if (htab[i] >= 0) {
+				// non-empty slot
+
+				disp = hsize_reg - i; // secondary hash (after G. Knott)
+				if (i === 0) disp = 1;
+
+				do {
+					if ((i -= disp) < 0) i += hsize_reg;
+
+					if (htab[i] == fcode) {
+						ent = codetab[i];
+						continue outer_loop;
+					}
+				} while (htab[i] >= 0);
+			}
+
+			output(ent, outs);
+			ent = c;
+			if (free_ent < maxmaxcode) {
+				codetab[i] = free_ent++; // code -> hashtable
+				htab[i] = fcode;
+			} else cl_block(outs);
+		}
+
+		// Put out the final code.
+		output(ent, outs);
+		output(EOFCode, outs);
+	};
+
+	// ----------------------------------------------------------------------------
+	var encode = exports.encode = function encode(os) {
+		os.write(initCodeSize); // write "initial code size" byte
+		remaining = imgW * imgH; // reset navigation variables
+		curPixel = 0;
+		compress(initCodeSize + 1, os); // compress and write the pixel data
+		os.write(0); // write block terminator
+	};
+
+	// Flush the packet to disk, and reset the accumulator
+	var flush_char = function flush_char(outs) {
+		if (a_count > 0) {
+			outs.write(a_count);
+			outs.writeArray(accum, a_count);
+			a_count = 0;
+		}
+	};
+
+	var MAXCODE = function MAXCODE(n_bits) {
+		return (1 << n_bits) - 1;
+	};
+
+	// ----------------------------------------------------------------------------
+	// Return the next pixel from the image
+	// ----------------------------------------------------------------------------
+
+	var nextPixel = function nextPixel() {
+		if (remaining === 0) return EOF;
+		--remaining;
+		var pix = pixAry[curPixel++];
+		return pix & 0xff;
+	};
+
+	var output = function output(code, outs) {
+
+		cur_accum &= masks[cur_bits];
+
+		if (cur_bits > 0) cur_accum |= code << cur_bits;else cur_accum = code;
+
+		cur_bits += n_bits;
+
+		while (cur_bits >= 8) {
+			char_out(cur_accum & 0xff, outs);
+			cur_accum >>= 8;
+			cur_bits -= 8;
+		}
+
+		// If the next entry is going to be too big for the code size,
+		// then increase it, if possible.
+
+		if (free_ent > maxcode || clear_flg) {
+
+			if (clear_flg) {
+
+				maxcode = MAXCODE(n_bits = g_init_bits);
+				clear_flg = false;
+			} else {
+
+				++n_bits;
+				if (n_bits == maxbits) maxcode = maxmaxcode;else maxcode = MAXCODE(n_bits);
+			}
+		}
+
+		if (code == EOFCode) {
+
+			// At EOF, write the rest of the buffer.
+			while (cur_bits > 0) {
+				char_out(cur_accum & 0xff, outs);
+				cur_accum >>= 8;
+				cur_bits -= 8;
+			}
+
+			flush_char(outs);
+		}
+	};
+
+	LZWEncoder.apply(this, arguments);
+	return exports;
+};
+},{}],9:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -419,5 +547,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[9,11], null)
-//# sourceMappingURL=/GIFGenerator.6171d4fc.map
+},{}]},{},[9,22], null)
+//# sourceMappingURL=/LZWEncoder.fe1a25f9.map

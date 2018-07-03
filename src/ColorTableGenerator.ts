@@ -9,7 +9,6 @@ export class ColorTableGenerator {
 	} = {};
 
 	constructor(frame: number[]) {
-		// const RGB:number = this.getNumericalRGB(frame);
 		this._neuQuant = new NeuQuant(frame, 10);
 		this._neuQuant.buildColormap();
 		this._colorTable = this._neuQuant.getColormap();
@@ -39,11 +38,11 @@ export class ColorTableGenerator {
 
 	generate() {
 		return new Promise((resolve, reject) => {
-			let pixel: string;
+			let pixel: string = '';
 			let count = 0;
-			this._colorTable.forEach((color, index) => {
-				pixel + this.pad(color);
-				if (index !== 0 && index % 3 === 0) {
+			this._colorTable.forEach((value, index, array) => {
+				pixel += this.pad(value);
+				if ((index + 1) % 3 === 0) {
 					this._GCT.push(pixel);
 					this._colorLookup[pixel] = count;
 					count++;
@@ -52,7 +51,7 @@ export class ColorTableGenerator {
 				if (index === this._colorTable.length - 1)
 					resolve({
 						_colorLookup: this._colorLookup,
-						_colorTable: this._GCT,
+						_colorTable: this._GCT
 					});
 			});
 		});

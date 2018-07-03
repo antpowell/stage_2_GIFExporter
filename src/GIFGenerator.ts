@@ -1,5 +1,5 @@
 import { EncodedImage } from './EncodedImage';
-///<reference path = 'JS/LZWEncoder.js'/>
+///<reference path = '../JS/LZWEncoder.js'/>
 
 export class GIFGenerator {
 	stream: EncodedImage = new EncodedImage();
