@@ -1,16 +1,16 @@
-#Restructer Folders
-###GE
-###PG
-###Testing
+#Restructer Folders √ Using Parcel
+###GE √ this is the src folder
+###PG √ removed files used for trying things out
+###Testing 
 
-#Rename Files to Match Class names
+#Rename Files to Match Class names √ Renamed ColorGenerator to ColorTableGenerator
 #Correct version of TypeScript
 
 #!Use working with Babylon Viewer
-#!Gulp Server
+#!Gulp Server √ switched to Parcel insted (easier for pickup and put down especially with TS)
 #!Get GLTF from fiddler
-#Meeting Mon afternoon || Tues
+#Meeting Mon afternoon || Tues √ did this Fri
 #Add NueQuant
-#Ensure CELA compliance
+#Ensure CELA compliance ✓
 #Review BABYLON
 #Resize on WEBGL ??Check how DOM resizes images??
