@@ -140,7 +140,7 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],14:[function(require,module,exports) {
+},{}],13:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -752,7 +752,7 @@ var ColorTableGenerator = /** @class */function () {
     return ColorTableGenerator;
 }();
 exports.ColorTableGenerator = ColorTableGenerator;
-},{"./js/NeuQuant":16}],13:[function(require,module,exports) {
+},{"./js/NeuQuant":16}],14:[function(require,module,exports) {
 "use strict";
 
 var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -1036,7 +1036,7 @@ var GIFExporter = /** @class */function () {
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./GIFGenerator":14,"./ColorTableGenerator":12}],10:[function(require,module,exports) {
+},{"./GIFGenerator":13,"./ColorTableGenerator":12}],10:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1114,7 +1114,7 @@ window.addEventListener('DOMContentLoaded', function () {
         game.stopGIF();
     });
 });
-},{"./GIFExporter":13}],29:[function(require,module,exports) {
+},{"./GIFExporter":14}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1143,7 +1143,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '61800' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '49869' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 

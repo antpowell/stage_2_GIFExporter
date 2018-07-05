@@ -140,7 +140,7 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],14:[function(require,module,exports) {
+},{}],13:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -278,7 +278,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '61800' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '49869' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -419,5 +419,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[29,14], null)
+},{}]},{},[29,13], null)
 //# sourceMappingURL=/GIFGenerator.d1b878e2.map
