@@ -18,14 +18,14 @@ export class GIFGenerator {
 		console.log(`Generator now running...`);
 	}
 
-	init() {
+	public init() {
 		this.headerGenerator();
 		this.LSDGenerator();
 		this.GCTWriter();
 		this.AppExtGenerator();
 	}
 
-	generateFrame(indexedPixels: number[], frameCount?: number) {
+	public generateFrame(indexedPixels: number[], frameCount?: number) {
 		this.frameIndexedPixels = indexedPixels;
 		this.frameCount += 1;
 		console.log(`generating frame ${this.frameCount}`);
@@ -34,27 +34,31 @@ export class GIFGenerator {
 		this.imgDataGenerator();
 	}
 
-	download(filename: string) {
+	public download(filename: string) {
 		this.TrailerGenerator();
 
 		console.log('downloading');
-		console.log(this.stream);
 
-		const download = document.createElement('a');
-		download.download = filename;
-		download.href = URL.createObjectURL(
+		const url = URL.createObjectURL(
 			new Blob([new Uint8Array(this.stream.get())], {
 				type: 'image/gif',
 			})
 		);
+		const download = document.createElement('a');
+		document.body.appendChild(download);
+		download.style.display = 'none';
+		download.href = url;
+		download.download = filename;
 		download.click();
+		URL.revokeObjectURL(url);
+		download.parentElement.removeChild(download);
 	}
 
-	headerGenerator() {
+	private headerGenerator() {
 		this.stream.writeUTF('GIF89a'); /* GIF Header */
 	}
 
-	LSDGenerator() {
+	private LSDGenerator() {
 		this.stream.writeLittleEndian(this.width); /* Canvas Width */
 		this.stream.writeLittleEndian(this.height); /* Canvas Height */
 		this.stream.write(0xf7); /* Packed Field */
@@ -62,7 +66,7 @@ export class GIFGenerator {
 		this.stream.write(0); /* Pixel Aspect Ration */
 	}
 
-	GCEGenerator() {
+	private GCEGenerator() {
 		this.stream.write(0x21); /* Extension Introducer */
 		this.stream.write(0xf9); /* Graphic Control Label */
 		this.stream.write(0x4); /* Byte Size */
@@ -72,7 +76,7 @@ export class GIFGenerator {
 		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	imgDescGenerator() {
+	private imgDescGenerator() {
 		this.stream.write(0x2c); /* Image Seperator Always 2C */
 		this.stream.writeLittleEndian(0x0); /* Image Left */
 		this.stream.writeLittleEndian(0x0); /* Image Top */
@@ -81,7 +85,7 @@ export class GIFGenerator {
 		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	AppExtGenerator() {
+	private AppExtGenerator() {
 		this.stream.write(0x21); /* extension introducer */
 		this.stream.write(0xff); /* app extension label */
 		this.stream.write(11); /* block size */
@@ -94,12 +98,12 @@ export class GIFGenerator {
 		this.stream.write(0); /* Block Terminator */
 	}
 
-	TrailerGenerator() {
+	private TrailerGenerator() {
 		this.stream.write(0x3b); /* Trailer Marker */
 		console.log(`Generator now finished.`);
 	}
 
-	GCTWriter() {
+	private GCTWriter() {
 		let count = 0;
 
 		this.GCT.forEach(color => {
@@ -112,7 +116,7 @@ export class GIFGenerator {
 		}
 	}
 
-	imgDataGenerator() {
+	private imgDataGenerator() {
 		const encoder = new LZWEncoder(
 			this.width,
 			this.height,
@@ -123,13 +127,13 @@ export class GIFGenerator {
 		console.log(`completed frame ${this.frameCount}`);
 	}
 
-	LCTGenerator() {}
+	private LCTGenerator() {}
 
-	PlainTextExtGenerator() {}
+	private PlainTextExtGenerator() {}
 
-	CommentExtGenerator() {}
+	private CommentExtGenerator() {}
 
-	writeLittleEndian(num: number) {
+	private writeLittleEndian(num: number) {
 		this.stream.write(num & 0xff);
 		this.stream.write((num >> 8) & 0xff);
 	}

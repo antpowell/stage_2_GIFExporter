@@ -16,6 +16,7 @@ export class GIFExporter {
 	private _gifGenerator: GIFGenerator;
 	private _colorLookUpTable: { [index: string]: number };
 	private _colorTableGenerator: ColorTableGenerator;
+	private _downloading: any;
 
 	constructor(
 		engine: BABYLON.Engine,
@@ -28,7 +29,7 @@ export class GIFExporter {
 		this._width = engine.getRenderWidth();
 		this._height = engine.getRenderHeight();
 	}
-	start() {
+	public start() {
 		this.colorSetup();
 		console.log('​GIFExporter3 -> start -> ');
 		return new Promise(async (resolve, reject) => {
@@ -50,14 +51,14 @@ export class GIFExporter {
 		});
 	}
 
-	stop() {
+	public stop() {
 		console.log('​GIFExporter3 -> stop -> ');
 		clearInterval(this._intervalRef);
 	}
 
-	async download() {
+	public async download() {
 		console.log('​GIFExporter3 -> download -> ');
-		await this.start();
+		this._downloading = await this.start();
 		this._gifGenerator.download('testingGE3.gif');
 	}
 

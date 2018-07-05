@@ -174,13 +174,17 @@ var GIFGenerator = /** @class */function () {
     GIFGenerator.prototype.download = function (filename) {
         this.TrailerGenerator();
         console.log('downloading');
-        console.log(this.stream);
-        var download = document.createElement('a');
-        download.download = filename;
-        download.href = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
+        var url = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
             type: 'image/gif'
         }));
+        var download = document.createElement('a');
+        document.body.appendChild(download);
+        download.style.display = 'none';
+        download.href = url;
+        download.download = filename;
         download.click();
+        URL.revokeObjectURL(url);
+        download.parentElement.removeChild(download);
     };
     GIFGenerator.prototype.headerGenerator = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */

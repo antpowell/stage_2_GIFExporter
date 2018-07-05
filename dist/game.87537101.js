@@ -174,13 +174,17 @@ var GIFGenerator = /** @class */function () {
     GIFGenerator.prototype.download = function (filename) {
         this.TrailerGenerator();
         console.log('downloading');
-        console.log(this.stream);
-        var download = document.createElement('a');
-        download.download = filename;
-        download.href = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
+        var url = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
             type: 'image/gif'
         }));
+        var download = document.createElement('a');
+        document.body.appendChild(download);
+        download.style.display = 'none';
+        download.href = url;
+        download.download = filename;
         download.click();
+        URL.revokeObjectURL(url);
+        download.parentElement.removeChild(download);
     };
     GIFGenerator.prototype.headerGenerator = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */
@@ -881,13 +885,15 @@ var GIFExporter = /** @class */function () {
     };
     GIFExporter.prototype.download = function () {
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         console.log('​GIFExporter3 -> download -> ');
+                        _a = this;
                         return [4 /*yield*/, this.start()];
                     case 1:
-                        _a.sent();
+                        _a._downloading = _b.sent();
                         this._gifGenerator.download('testingGE3.gif');
                         return [2 /*return*/];
                 }

@@ -14,7 +14,7 @@ export class ColorTableGenerator {
 		this._colorTable = this._neuQuant.getColormap();
 	}
 
-	generate() {
+	public generate() {
 		return new Promise((resolve, reject) => {
 			let pixel: string = '';
 			let count = 0;
@@ -35,7 +35,7 @@ export class ColorTableGenerator {
 		});
 	}
 
-	lookupRGB(pixel: string) {
+	public lookupRGB(pixel: string) {
 		const R = parseInt(pixel.substr(0, 2), 16);
 		const G = parseInt(pixel.substr(2, 2), 16);
 		const B = parseInt(pixel.substr(4, 2), 16);
