@@ -140,17 +140,29 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
+},{}],31:[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var WebWork = /** @class */function () {
+    function WebWork() {}
+    WebWork.prototype.LZWEncoding = function () {
+        var now = performance.now();
+        console.log("LZW time taken: " + (performance.now() - now));
+    };
+    return WebWork;
+}();
+exports.WebWork = WebWork;
 },{}],13:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodedImage_1 = require("./EncodedImage");
+var WebWoker_1 = require("./WebWoker");
 ///<reference path = '../JS/LZWEncoder.js'/>
 var GIFGenerator = /** @class */function () {
     function GIFGenerator(width, height, GCT) {
         this.stream = new EncodedImage_1.EncodedImage();
-        this.byteCount = 0;
-        this.encodedImage = new EncodedImage_1.EncodedImage();
         this.frameCount = 0;
         this.width = width;
         this.height = height;
@@ -158,12 +170,13 @@ var GIFGenerator = /** @class */function () {
         console.log("Generator now running...");
     }
     GIFGenerator.prototype.init = function () {
+        this._webWorker = new WebWoker_1.WebWork();
         this.headerGenerator();
         this.LSDGenerator();
         this.GCTWriter();
         this.AppExtGenerator();
     };
-    GIFGenerator.prototype.generateFrame = function (indexedPixels, frameCount) {
+    GIFGenerator.prototype.generateFrame = function (indexedPixels) {
         this.frameIndexedPixels = indexedPixels;
         this.frameCount += 1;
         console.log("generating frame " + this.frameCount);
@@ -171,20 +184,9 @@ var GIFGenerator = /** @class */function () {
         this.imgDescGenerator();
         this.imgDataGenerator();
     };
-    GIFGenerator.prototype.download = function (filename) {
+    GIFGenerator.prototype.getStream = function () {
         this.TrailerGenerator();
-        console.log('downloading');
-        var url = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
-            type: 'image/gif'
-        }));
-        var download = document.createElement('a');
-        document.body.appendChild(download);
-        download.style.display = 'none';
-        download.href = url;
-        download.download = filename;
-        download.click();
-        URL.revokeObjectURL(url);
-        download.parentElement.removeChild(download);
+        return this.stream.get();
     };
     GIFGenerator.prototype.headerGenerator = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */
@@ -226,6 +228,7 @@ var GIFGenerator = /** @class */function () {
     GIFGenerator.prototype.TrailerGenerator = function () {
         this.stream.write(0x3b); /* Trailer Marker */
         console.log("Generator now finished.");
+        this.frameCount = 0; /* Reset frame count for next GIF */
     };
     GIFGenerator.prototype.GCTWriter = function () {
         var _this = this;
@@ -239,6 +242,10 @@ var GIFGenerator = /** @class */function () {
         }
     };
     GIFGenerator.prototype.imgDataGenerator = function () {
+        // this._webWorker.LZWEncoder(this.width,
+        // 	this.height,
+        // 	this.frameIndexedPixels,
+        // 	8);
         var encoder = new LZWEncoder(this.width, this.height, this.frameIndexedPixels, 8);
         encoder.encode(this.stream);
         console.log("completed frame " + this.frameCount);
@@ -253,7 +260,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":11}],29:[function(require,module,exports) {
+},{"./EncodedImage":11,"./WebWoker":31}],34:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -423,5 +430,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[29,13], null)
+},{}]},{},[34,13], null)
 //# sourceMappingURL=/GIFGenerator.d1b878e2.map

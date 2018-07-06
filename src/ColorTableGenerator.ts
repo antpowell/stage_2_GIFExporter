@@ -14,7 +14,7 @@ export class ColorTableGenerator {
 		this._colorTable = this._neuQuant.getColormap();
 	}
 
-	public generate() {
+	public generate(): Promise<[{ [index: string]: number }, string[]]> {
 		return new Promise((resolve, reject) => {
 			let pixel: string = '';
 			let count = 0;
@@ -27,24 +27,21 @@ export class ColorTableGenerator {
 					pixel = '';
 				}
 				if (index === this._colorTable.length - 1)
-					resolve({
-						_colorLookup: this._colorLookup,
-						_colorTable: this._GCT,
-					});
+					resolve([this._colorLookup, this._GCT]);
 			});
 		});
 	}
 
-	public lookupRGB(pixel: string) {
+	public lookupRGB(pixel: string): number {
 		const R = parseInt(pixel.substr(0, 2), 16);
 		const G = parseInt(pixel.substr(2, 2), 16);
 		const B = parseInt(pixel.substr(4, 2), 16);
 		const pixelIndex = this._neuQuant.lookupRGB(R, G, B);
 
-		return pixelIndex;
+		return pixelIndex as number;
 	}
 
-	private pad(color: number) {
+	private pad(color: number): string {
 		if (color < 16) {
 			return `0${color.toString(16)}`;
 		} else {

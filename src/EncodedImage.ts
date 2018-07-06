@@ -3,34 +3,34 @@ export class EncodedImage {
 
 	constructor() {}
 
-	get() {
-		return this.data as number[];
+	public get(): number[] {
+		return this.data;
 	}
 
-	write(byte: number) {
+	public write(byte: number): void {
 		this.data.push(byte);
 	}
 
-	writeArray(array: number[], arraySize: number) {
+	public writeArray(array: number[], arraySize: number): void {
 		for (let i = 0; i < arraySize; i++) {
 			this.write(array[i]);
 		}
 	}
 
-	writeUTF(UTF: string) {
+	public writeUTF(UTF: string): void {
 		for (let i = 0; i < UTF.length; i++) {
 			this.write(UTF.charCodeAt(i));
 		}
 	}
 
-	writeColor(color: string) {
+	public writeColor(color: string): void {
 		for (let i = 0; i < color.length; i += 2) {
 			const intValue: number = parseInt(color[i] + color[i + 1], 16);
 			this.write(intValue);
 		}
 	}
 
-	writeLittleEndian(num: number) {
+	public writeLittleEndian(num: number): void {
 		this.write(num & 0xff);
 		this.write((num >> 8) & 0xff);
 	}

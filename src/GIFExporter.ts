@@ -3,7 +3,6 @@ import { ColorTableGenerator } from './ColorTableGenerator';
 import NeuQuant from './js/NeuQuant';
 
 export class GIFExporter {
-	private _neuQuant: NeuQuant;
 	private _engine: BABYLON.Engine;
 	private _canvas: HTMLCanvasElement;
 	private _delay: number;
@@ -29,56 +28,51 @@ export class GIFExporter {
 		this._width = engine.getRenderWidth();
 		this._height = engine.getRenderHeight();
 	}
-	public start() {
-		this.colorSetup();
-		console.log('​GIFExporter3 -> start -> ');
-		return new Promise(async (resolve, reject) => {
-			await this.getSnapShotDataFromCanvas();
 
-			// console.log(this._GCT);
-			this._gifGenerator = new GIFGenerator(
-				this._width,
-				this._height,
-				this._GCT
-			);
-			this._gifGenerator.init();
+	public async start(): Promise<number[]> {
+		await this.generateColorTable();
+		console.log('​GIFExporter3 -> start -> ');
+		return new Promise<number[]>(async (resolve, reject) => {
+			await this.getSnapShotDataFromCanvas();
+			this.bootstrapGIF();
 
 			console.log('setupImg complete');
 
 			await this.processFrames(this._imageDataCollection);
-			// console.log(`finished`, this._imageDataCollection);
-			resolve();
+			resolve(this._gifGenerator.getStream());
 		});
 	}
 
-	public stop() {
+	public stop(): void {
 		console.log('​GIFExporter3 -> stop -> ');
 		clearInterval(this._intervalRef);
 	}
 
-	public async download() {
+	public async download(filename = 'canvasGIF.gif'): Promise<void> {
+		const imgData = await this.start();
 		console.log('​GIFExporter3 -> download -> ');
-		this._downloading = await this.start();
-		this._gifGenerator.download('testingGE3.gif');
+		const url = URL.createObjectURL(
+			new Blob([new Uint8Array(imgData)], {
+				type: 'image/gif',
+			})
+		);
+		const download = document.createElement('a');
+		document.body.appendChild(download);
+		download.target = '_blank';
+		download.setAttribute('target', '_blank');
+		download.style.display = 'none';
+		download.href = url;
+		download.download = filename;
+		download.click();
+		URL.revokeObjectURL(url);
+		download.parentElement.removeChild(download);
+		// this._gifGenerator.download('testingGE3.gif');
 	}
 
-	private getSnapShotDataFromCanvas() {
+	private getSnapShotDataFromCanvas(): Promise<{}> {
 		return new Promise((resolve, reject) => {
-			this._intervalRef = setInterval(() => {
-				const gl =
-					this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
-				const pixels = new Uint8Array(
-					gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-				);
-				gl.readPixels(
-					0,
-					0,
-					gl.drawingBufferWidth,
-					gl.drawingBufferHeight,
-					gl.RGBA,
-					gl.UNSIGNED_BYTE,
-					pixels
-				);
+			this._intervalRef = setInterval(async () => {
+				const pixels = await this.getWebGLPixels();
 				this._imageDataCollection.push(pixels);
 			}, this._delay);
 			setTimeout(() => {
@@ -88,21 +82,21 @@ export class GIFExporter {
 		});
 	}
 
-	private processFrames(imageDataCollection: Uint8Array[]) {
+	private processFrames(imageDataCollection: Uint8Array[]): Promise<{}> {
 		console.log('​GIFExporter3 -> privateprocessFrames -> ');
-		new Promise(async (resolve, reject) => {
+		return new Promise(async (resolve, reject) => {
 			let count = imageDataCollection.length;
 			imageDataCollection.forEach(async imgData => {
 				imgData = (await this.flipFrame(imgData)) as Uint8Array;
-				const rgbData = this.removeAlpha(imgData);
-				const indexedData = this.mapPixelIndex(rgbData[0] as string[]);
+				const [rgbData] = this.removeAlpha(imgData);
+				const indexedData = this.mapPixelIndex(rgbData as string[]);
 				this._gifGenerator.generateFrame(indexedData);
 				if (--count === 0) resolve();
 			});
 		});
 	}
 
-	private flipFrame(frame: Uint8Array) {
+	private flipFrame(frame: Uint8Array): Promise<Uint8Array> {
 		return new Promise((resolve, reject) => {
 			const split =
 				(this._height / 2) |
@@ -129,7 +123,7 @@ export class GIFExporter {
 		});
 	}
 
-	private removeAlpha(colorArray: Uint8ClampedArray) {
+	private removeAlpha(colorArray: Uint8ClampedArray): [string[], number[]] {
 		let RGBPixelData: string[] = [];
 		let RGBNumerical: number[] = [];
 		for (let i = 0; i < colorArray.length; i += 4) {
@@ -147,7 +141,7 @@ export class GIFExporter {
 		return [RGBPixelData, RGBNumerical];
 	}
 
-	private pad(color: number) {
+	private pad(color: number): string {
 		if (color < 16) {
 			return `0${color.toString(16)}`;
 		} else {
@@ -155,7 +149,7 @@ export class GIFExporter {
 		}
 	}
 
-	private mapPixelIndex(rgbData: string[]) {
+	private mapPixelIndex(rgbData: string[]): number[] {
 		const indexedPixels: number[] = [];
 		rgbData.forEach(pixel => {
 			if (this._colorLookUpTable[pixel]) {
@@ -167,41 +161,56 @@ export class GIFExporter {
 		return indexedPixels;
 	}
 
-	private async getColorFrame() {
-		const gl =
-			this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
-		const pixels = new Uint8Array(
-			gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-		);
-		gl.readPixels(
-			0,
-			0,
-			gl.drawingBufferWidth,
-			gl.drawingBufferHeight,
-			gl.RGBA,
-			gl.UNSIGNED_BYTE,
-			pixels
-		);
+	private async getColorFrame(): Promise<number[]> {
+		const pixels = await this.getWebGLPixels();
 		const img = (await this.flipFrame(pixels)) as Uint8Array;
-		const RBGData = this.removeAlpha(img);
+		const [, RBGData] = this.removeAlpha(img);
 
-		return RBGData[1];
+		return RBGData;
 	}
 
-	private async colorSetup() {
-		const RGBFrame = (await this.getColorFrame()) as number[];
-		this._colorTableGenerator = new ColorTableGenerator(RGBFrame);
-		let color = (await this._colorTableGenerator.generate()) as {
-			_colorLookup: {
-				[index: string]: number;
-			};
-			_colorTable: string[];
-		};
+	private generateColorTable(): Promise<{}> {
+		return new Promise(async (resolve, reject) => {
+			const RGBFrame = await this.getColorFrame();
+			this._colorTableGenerator = new ColorTableGenerator(RGBFrame);
 
-		console.log(color);
-		this._colorLookUpTable = color._colorLookup;
-		this._GCT = color._colorTable;
+			[
+				this._colorLookUpTable,
+				this._GCT,
+			] = await this._colorTableGenerator.generate();
+
+			this._gifGenerator = new GIFGenerator(
+				this._width,
+				this._height,
+				this._GCT
+			);
+			this._gifGenerator.init();
+			resolve();
+		});
+	}
+
+	private bootstrapGIF(): void {
 		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GCT);
 		this._gifGenerator.init();
+	}
+
+	private getWebGLPixels(): Promise<Uint8Array> {
+		return new Promise((resolve, reject) => {
+			const gl =
+				this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
+			const pixels = new Uint8Array(
+				gl.drawingBufferWidth * gl.drawingBufferHeight * 4
+			);
+			gl.readPixels(
+				0,
+				0,
+				gl.drawingBufferWidth,
+				gl.drawingBufferHeight,
+				gl.RGBA,
+				gl.UNSIGNED_BYTE,
+				pixels
+			);
+			resolve(pixels);
+		});
 	}
 }

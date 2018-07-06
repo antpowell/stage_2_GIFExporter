@@ -582,10 +582,7 @@ var ColorTableGenerator = /** @class */function () {
                     count++;
                     pixel = '';
                 }
-                if (index === _this._colorTable.length - 1) resolve({
-                    _colorLookup: _this._colorLookup,
-                    _colorTable: _this._GCT
-                });
+                if (index === _this._colorTable.length - 1) resolve([_this._colorLookup, _this._GCT]);
             });
         });
     };
@@ -606,7 +603,7 @@ var ColorTableGenerator = /** @class */function () {
     return ColorTableGenerator;
 }();
 exports.ColorTableGenerator = ColorTableGenerator;
-},{"./js/NeuQuant":16}],29:[function(require,module,exports) {
+},{"./js/NeuQuant":16}],34:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -776,5 +773,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[29,12], null)
+},{}]},{},[34,12], null)
 //# sourceMappingURL=/ColorTableGenerator.d4a2436a.map

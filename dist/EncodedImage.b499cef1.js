@@ -140,7 +140,7 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],29:[function(require,module,exports) {
+},{}],34:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -310,5 +310,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[29,11], null)
+},{}]},{},[34,11], null)
 //# sourceMappingURL=/EncodedImage.b499cef1.map

@@ -1,15 +1,15 @@
 import { EncodedImage } from './EncodedImage';
+import { WebWork } from './WebWoker';
 ///<reference path = '../JS/LZWEncoder.js'/>
 
 export class GIFGenerator {
-	stream: EncodedImage = new EncodedImage();
-	byteCount: number = 0;
-	width: number;
-	height: number;
-	encodedImage: EncodedImage = new EncodedImage();
-	frameIndexedPixels: number[];
-	frameCount: number = 0;
-	GCT: string[];
+	private stream: EncodedImage = new EncodedImage();
+	private width: number;
+	private height: number;
+	private frameIndexedPixels: number[];
+	private frameCount: number = 0;
+	private GCT: string[];
+	private _webWorker: WebWork;
 
 	constructor(width: number, height: number, GCT: string[]) {
 		this.width = width;
@@ -18,14 +18,15 @@ export class GIFGenerator {
 		console.log(`Generator now running...`);
 	}
 
-	public init() {
+	public init(): void {
+		this._webWorker = new WebWork();
 		this.headerGenerator();
 		this.LSDGenerator();
 		this.GCTWriter();
 		this.AppExtGenerator();
 	}
 
-	public generateFrame(indexedPixels: number[], frameCount?: number) {
+	public generateFrame(indexedPixels: number[]): void {
 		this.frameIndexedPixels = indexedPixels;
 		this.frameCount += 1;
 		console.log(`generating frame ${this.frameCount}`);
@@ -34,31 +35,16 @@ export class GIFGenerator {
 		this.imgDataGenerator();
 	}
 
-	public download(filename: string) {
+	public getStream(): number[] {
 		this.TrailerGenerator();
-
-		console.log('downloading');
-
-		const url = URL.createObjectURL(
-			new Blob([new Uint8Array(this.stream.get())], {
-				type: 'image/gif',
-			})
-		);
-		const download = document.createElement('a');
-		document.body.appendChild(download);
-		download.style.display = 'none';
-		download.href = url;
-		download.download = filename;
-		download.click();
-		URL.revokeObjectURL(url);
-		download.parentElement.removeChild(download);
+		return this.stream.get();
 	}
 
-	private headerGenerator() {
+	private headerGenerator(): void {
 		this.stream.writeUTF('GIF89a'); /* GIF Header */
 	}
 
-	private LSDGenerator() {
+	private LSDGenerator(): void {
 		this.stream.writeLittleEndian(this.width); /* Canvas Width */
 		this.stream.writeLittleEndian(this.height); /* Canvas Height */
 		this.stream.write(0xf7); /* Packed Field */
@@ -66,7 +52,7 @@ export class GIFGenerator {
 		this.stream.write(0); /* Pixel Aspect Ration */
 	}
 
-	private GCEGenerator() {
+	private GCEGenerator(): void {
 		this.stream.write(0x21); /* Extension Introducer */
 		this.stream.write(0xf9); /* Graphic Control Label */
 		this.stream.write(0x4); /* Byte Size */
@@ -76,7 +62,7 @@ export class GIFGenerator {
 		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	private imgDescGenerator() {
+	private imgDescGenerator(): void {
 		this.stream.write(0x2c); /* Image Seperator Always 2C */
 		this.stream.writeLittleEndian(0x0); /* Image Left */
 		this.stream.writeLittleEndian(0x0); /* Image Top */
@@ -85,7 +71,7 @@ export class GIFGenerator {
 		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	private AppExtGenerator() {
+	private AppExtGenerator(): void {
 		this.stream.write(0x21); /* extension introducer */
 		this.stream.write(0xff); /* app extension label */
 		this.stream.write(11); /* block size */
@@ -98,12 +84,13 @@ export class GIFGenerator {
 		this.stream.write(0); /* Block Terminator */
 	}
 
-	private TrailerGenerator() {
+	private TrailerGenerator(): void {
 		this.stream.write(0x3b); /* Trailer Marker */
 		console.log(`Generator now finished.`);
+		this.frameCount = 0; /* Reset frame count for next GIF */
 	}
 
-	private GCTWriter() {
+	private GCTWriter(): void {
 		let count = 0;
 
 		this.GCT.forEach(color => {
@@ -116,7 +103,11 @@ export class GIFGenerator {
 		}
 	}
 
-	private imgDataGenerator() {
+	private imgDataGenerator(): void {
+		// this._webWorker.LZWEncoder(this.width,
+		// 	this.height,
+		// 	this.frameIndexedPixels,
+		// 	8);
 		const encoder = new LZWEncoder(
 			this.width,
 			this.height,
@@ -127,13 +118,13 @@ export class GIFGenerator {
 		console.log(`completed frame ${this.frameCount}`);
 	}
 
-	private LCTGenerator() {}
+	private LCTGenerator(): void {}
 
-	private PlainTextExtGenerator() {}
+	private PlainTextExtGenerator(): void {}
 
-	private CommentExtGenerator() {}
+	private CommentExtGenerator(): void {}
 
-	private writeLittleEndian(num: number) {
+	private writeLittleEndian(num: number): void {
 		this.stream.write(num & 0xff);
 		this.stream.write((num >> 8) & 0xff);
 	}
