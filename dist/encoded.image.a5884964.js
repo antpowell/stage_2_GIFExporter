@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({11:[function(require,module,exports) {
+})({13:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -140,127 +140,7 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],37:[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var WebWork = /** @class */function () {
-    function WebWork() {}
-    WebWork.prototype.LZWEncoding = function () {
-        var now = performance.now();
-        console.log("LZW time taken: " + (performance.now() - now));
-    };
-    return WebWork;
-}();
-exports.WebWork = WebWork;
-},{}],13:[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var EncodedImage_1 = require("./EncodedImage");
-var worker_service_1 = require("./worker.service");
-///<reference path = '../JS/LZWEncoder.js'/>
-var GIFGenerator = /** @class */function () {
-    function GIFGenerator(width, height, GCT) {
-        this.stream = new EncodedImage_1.EncodedImage();
-        this.frameCount = 0;
-        this.width = width;
-        this.height = height;
-        this.GCT = GCT;
-        console.log("Generator now running...");
-    }
-    GIFGenerator.prototype.init = function () {
-        this._webWorker = new worker_service_1.WebWork();
-        this.headerGenerator();
-        this.LSDGenerator();
-        this.GCTWriter();
-        this.AppExtGenerator();
-    };
-    GIFGenerator.prototype.generateFrame = function (indexedPixels) {
-        this.frameIndexedPixels = indexedPixels;
-        this.frameCount += 1;
-        console.log("generating frame " + this.frameCount);
-        this.GCEGenerator();
-        this.imgDescGenerator();
-        this.imgDataGenerator();
-    };
-    GIFGenerator.prototype.getStream = function () {
-        this.TrailerGenerator();
-        return this.stream.get();
-    };
-    GIFGenerator.prototype.headerGenerator = function () {
-        this.stream.writeUTF('GIF89a'); /* GIF Header */
-    };
-    GIFGenerator.prototype.LSDGenerator = function () {
-        this.stream.writeLittleEndian(this.width); /* Canvas Width */
-        this.stream.writeLittleEndian(this.height); /* Canvas Height */
-        this.stream.write(0xf7); /* Packed Field */
-        this.stream.write(0); /* Background Color Index */
-        this.stream.write(0); /* Pixel Aspect Ration */
-    };
-    GIFGenerator.prototype.GCEGenerator = function () {
-        this.stream.write(0x21); /* Extension Introducer */
-        this.stream.write(0xf9); /* Graphic Control Label */
-        this.stream.write(0x4); /* Byte Size */
-        this.stream.write(0x4); /* Packed Field */
-        this.stream.writeLittleEndian(0x9); /* Delay Time */
-        this.stream.write(0x0); /* Transparent Color Index */
-        this.stream.write(0x0); /* Block Terminator */
-    };
-    GIFGenerator.prototype.imgDescGenerator = function () {
-        this.stream.write(0x2c); /* Image Seperator Always 2C */
-        this.stream.writeLittleEndian(0x0); /* Image Left */
-        this.stream.writeLittleEndian(0x0); /* Image Top */
-        this.stream.writeLittleEndian(this.width); /* Image Width */
-        this.stream.writeLittleEndian(this.height); /* Image Height */
-        this.stream.write(0x0); /* Block Terminator */
-    };
-    GIFGenerator.prototype.AppExtGenerator = function () {
-        this.stream.write(0x21); /* extension introducer */
-        this.stream.write(0xff); /* app extension label */
-        this.stream.write(11); /* block size */
-        this.stream.writeUTF('NETSCAPE' + '2.0'); /* app id + auth code */
-        this.stream.write(3); /* sub-block size */
-        this.stream.write(1); /* loop sub-block id */
-        this.stream.writeLittleEndian(0); /* loop count (extra iterations, 0=repeat forever) */
-        this.stream.write(0); /* Block Terminator */
-    };
-    GIFGenerator.prototype.TrailerGenerator = function () {
-        this.stream.write(0x3b); /* Trailer Marker */
-        console.log("Generator now finished.");
-        this.frameCount = 0; /* Reset frame count for next GIF */
-    };
-    GIFGenerator.prototype.GCTWriter = function () {
-        var _this = this;
-        var count = 0;
-        this.GCT.forEach(function (color) {
-            count += 3;
-            _this.stream.writeColor(color);
-        });
-        for (var i = count; i < 3 * 256; i++) {
-            this.stream.write(0);
-        }
-    };
-    GIFGenerator.prototype.imgDataGenerator = function () {
-        // this._webWorker.LZWEncoder(this.width,
-        // 	this.height,
-        // 	this.frameIndexedPixels,
-        // 	8);
-        var encoder = new LZWEncoder(this.width, this.height, this.frameIndexedPixels, 8);
-        encoder.encode(this.stream);
-        console.log("completed frame " + this.frameCount);
-    };
-    GIFGenerator.prototype.LCTGenerator = function () {};
-    GIFGenerator.prototype.PlainTextExtGenerator = function () {};
-    GIFGenerator.prototype.CommentExtGenerator = function () {};
-    GIFGenerator.prototype.writeLittleEndian = function (num) {
-        this.stream.write(num & 0xff);
-        this.stream.write(num >> 8 & 0xff);
-    };
-    return GIFGenerator;
-}();
-exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":11,"./worker.service":37}],34:[function(require,module,exports) {
+},{}],40:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -289,7 +169,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '49869' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62125' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -430,5 +310,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[34,13], null)
-//# sourceMappingURL=/GIFGenerator.d1b878e2.map
+},{}]},{},[40,13], null)
+//# sourceMappingURL=/encoded.image.a5884964.map

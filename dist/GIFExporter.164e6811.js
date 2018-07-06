@@ -140,7 +140,7 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],31:[function(require,module,exports) {
+},{}],37:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -158,7 +158,7 @@ exports.WebWork = WebWork;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodedImage_1 = require("./EncodedImage");
-var WebWoker_1 = require("./WebWoker");
+var worker_service_1 = require("./worker.service");
 ///<reference path = '../JS/LZWEncoder.js'/>
 var GIFGenerator = /** @class */function () {
     function GIFGenerator(width, height, GCT) {
@@ -170,7 +170,7 @@ var GIFGenerator = /** @class */function () {
         console.log("Generator now running...");
     }
     GIFGenerator.prototype.init = function () {
-        this._webWorker = new WebWoker_1.WebWork();
+        this._webWorker = new worker_service_1.WebWork();
         this.headerGenerator();
         this.LSDGenerator();
         this.GCTWriter();
@@ -260,7 +260,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":11,"./WebWoker":31}],16:[function(require,module,exports) {
+},{"./EncodedImage":11,"./worker.service":37}],16:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

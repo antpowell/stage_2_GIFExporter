@@ -1,6 +1,6 @@
-import { EncodedImage } from './EncodedImage';
-import { WebWork } from './WebWoker';
-///<reference path = '../JS/LZWEncoder.js'/>
+import { EncodedImage } from './encoded.image';
+import { WorkerService } from './worker.service';
+import { LZWEncoder } from './LZW';
 
 export class GIFGenerator {
 	private stream: EncodedImage = new EncodedImage();
@@ -9,7 +9,7 @@ export class GIFGenerator {
 	private frameIndexedPixels: number[];
 	private frameCount: number = 0;
 	private GCT: string[];
-	private _webWorker: WebWork;
+	private _webWorker: WorkerService;
 
 	constructor(width: number, height: number, GCT: string[]) {
 		this.width = width;
@@ -19,7 +19,7 @@ export class GIFGenerator {
 	}
 
 	public init(): void {
-		this._webWorker = new WebWork();
+		this._webWorker = new WorkerService();
 		this.headerGenerator();
 		this.LSDGenerator();
 		this.GCTWriter();
@@ -103,7 +103,14 @@ export class GIFGenerator {
 		}
 	}
 
-	private imgDataGenerator(): void {
+	private async imgDataGenerator(): Promise<void> {
+		// await this._webWorker.LZW({
+		// 	width: this.width,
+		// 	height: this.height,
+		// 	data: this.frameIndexedPixels,
+		// 	colorDepth: 8,
+		// 	gif: this.stream,
+		// });
 		// this._webWorker.LZWEncoder(this.width,
 		// 	this.height,
 		// 	this.frameIndexedPixels,

@@ -1,6 +1,5 @@
-import { GIFGenerator } from './GIFGenerator';
-import { ColorTableGenerator } from './ColorTableGenerator';
-import NeuQuant from './js/NeuQuant';
+import { GIFGenerator } from './gif.generator';
+import { ColorTableGenerator } from './color.table.generator';
 
 export class GIFExporter {
 	private _engine: BABYLON.Engine;
@@ -66,7 +65,6 @@ export class GIFExporter {
 		download.click();
 		URL.revokeObjectURL(url);
 		download.parentElement.removeChild(download);
-		// this._gifGenerator.download('testingGE3.gif');
 	}
 
 	private getSnapShotDataFromCanvas(): Promise<{}> {
