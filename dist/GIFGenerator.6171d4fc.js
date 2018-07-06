@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({9:[function(require,module,exports) {
+})({11:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -140,17 +140,29 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],11:[function(require,module,exports) {
+},{}],56:[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var WebWork = /** @class */function () {
+    function WebWork() {}
+    WebWork.prototype.LZWEncoding = function () {
+        var now = performance.now();
+        console.log("LZW time taken: " + (performance.now() - now));
+    };
+    return WebWork;
+}();
+exports.WebWork = WebWork;
+},{}],14:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodedImage_1 = require("./EncodedImage");
+var WebWoker_1 = require("./WebWoker");
 ///<reference path = '../JS/LZWEncoder.js'/>
 var GIFGenerator = /** @class */function () {
     function GIFGenerator(width, height, GCT) {
         this.stream = new EncodedImage_1.EncodedImage();
-        this.byteCount = 0;
-        this.encodedImage = new EncodedImage_1.EncodedImage();
         this.frameCount = 0;
         this.width = width;
         this.height = height;
@@ -158,12 +170,13 @@ var GIFGenerator = /** @class */function () {
         console.log("Generator now running...");
     }
     GIFGenerator.prototype.init = function () {
+        this._webWorker = new WebWoker_1.WebWork();
         this.headerGenerator();
         this.LSDGenerator();
         this.GCTWriter();
         this.AppExtGenerator();
     };
-    GIFGenerator.prototype.generateFrame = function (indexedPixels, frameCount) {
+    GIFGenerator.prototype.generateFrame = function (indexedPixels) {
         this.frameIndexedPixels = indexedPixels;
         this.frameCount += 1;
         console.log("generating frame " + this.frameCount);
@@ -171,16 +184,9 @@ var GIFGenerator = /** @class */function () {
         this.imgDescGenerator();
         this.imgDataGenerator();
     };
-    GIFGenerator.prototype.download = function (filename) {
+    GIFGenerator.prototype.getStream = function () {
         this.TrailerGenerator();
-        console.log('downloading');
-        console.log(this.stream);
-        var download = document.createElement('a');
-        download.download = filename;
-        download.href = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
-            type: 'image/gif'
-        }));
-        download.click();
+        return this.stream.get();
     };
     GIFGenerator.prototype.headerGenerator = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */
@@ -197,7 +203,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.write(0xf9); /* Graphic Control Label */
         this.stream.write(0x4); /* Byte Size */
         this.stream.write(0x4); /* Packed Field */
-        this.stream.writeLittleEndian(0x32); /* Delay Time */
+        this.stream.writeLittleEndian(0x9); /* Delay Time */
         this.stream.write(0x0); /* Transparent Color Index */
         this.stream.write(0x0); /* Block Terminator */
     };
@@ -222,6 +228,7 @@ var GIFGenerator = /** @class */function () {
     GIFGenerator.prototype.TrailerGenerator = function () {
         this.stream.write(0x3b); /* Trailer Marker */
         console.log("Generator now finished.");
+        this.frameCount = 0; /* Reset frame count for next GIF */
     };
     GIFGenerator.prototype.GCTWriter = function () {
         var _this = this;
@@ -235,6 +242,10 @@ var GIFGenerator = /** @class */function () {
         }
     };
     GIFGenerator.prototype.imgDataGenerator = function () {
+        // this._webWorker.LZWEncoder(this.width,
+        // 	this.height,
+        // 	this.frameIndexedPixels,
+        // 	8);
         var encoder = new LZWEncoder(this.width, this.height, this.frameIndexedPixels, 8);
         encoder.encode(this.stream);
         console.log("completed frame " + this.frameCount);
@@ -249,7 +260,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":9}],9:[function(require,module,exports) {
+},{"./EncodedImage":11,"./WebWoker":56}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -278,7 +289,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '63538' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '12252' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -419,5 +430,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[9,11], null)
+},{}]},{},[29,14], null)
 //# sourceMappingURL=/GIFGenerator.6171d4fc.map

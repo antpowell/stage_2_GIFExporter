@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({9:[function(require,module,exports) {
+})({11:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -140,17 +140,29 @@ var EncodedImage = /** @class */function () {
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],11:[function(require,module,exports) {
+},{}],56:[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var WebWork = /** @class */function () {
+    function WebWork() {}
+    WebWork.prototype.LZWEncoding = function () {
+        var now = performance.now();
+        console.log("LZW time taken: " + (performance.now() - now));
+    };
+    return WebWork;
+}();
+exports.WebWork = WebWork;
+},{}],14:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodedImage_1 = require("./EncodedImage");
+var WebWoker_1 = require("./WebWoker");
 ///<reference path = '../JS/LZWEncoder.js'/>
 var GIFGenerator = /** @class */function () {
     function GIFGenerator(width, height, GCT) {
         this.stream = new EncodedImage_1.EncodedImage();
-        this.byteCount = 0;
-        this.encodedImage = new EncodedImage_1.EncodedImage();
         this.frameCount = 0;
         this.width = width;
         this.height = height;
@@ -158,12 +170,13 @@ var GIFGenerator = /** @class */function () {
         console.log("Generator now running...");
     }
     GIFGenerator.prototype.init = function () {
+        this._webWorker = new WebWoker_1.WebWork();
         this.headerGenerator();
         this.LSDGenerator();
         this.GCTWriter();
         this.AppExtGenerator();
     };
-    GIFGenerator.prototype.generateFrame = function (indexedPixels, frameCount) {
+    GIFGenerator.prototype.generateFrame = function (indexedPixels) {
         this.frameIndexedPixels = indexedPixels;
         this.frameCount += 1;
         console.log("generating frame " + this.frameCount);
@@ -171,16 +184,9 @@ var GIFGenerator = /** @class */function () {
         this.imgDescGenerator();
         this.imgDataGenerator();
     };
-    GIFGenerator.prototype.download = function (filename) {
+    GIFGenerator.prototype.getStream = function () {
         this.TrailerGenerator();
-        console.log('downloading');
-        console.log(this.stream);
-        var download = document.createElement('a');
-        download.download = filename;
-        download.href = URL.createObjectURL(new Blob([new Uint8Array(this.stream.get())], {
-            type: 'image/gif'
-        }));
-        download.click();
+        return this.stream.get();
     };
     GIFGenerator.prototype.headerGenerator = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */
@@ -197,7 +203,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.write(0xf9); /* Graphic Control Label */
         this.stream.write(0x4); /* Byte Size */
         this.stream.write(0x4); /* Packed Field */
-        this.stream.writeLittleEndian(0x32); /* Delay Time */
+        this.stream.writeLittleEndian(0x9); /* Delay Time */
         this.stream.write(0x0); /* Transparent Color Index */
         this.stream.write(0x0); /* Block Terminator */
     };
@@ -222,6 +228,7 @@ var GIFGenerator = /** @class */function () {
     GIFGenerator.prototype.TrailerGenerator = function () {
         this.stream.write(0x3b); /* Trailer Marker */
         console.log("Generator now finished.");
+        this.frameCount = 0; /* Reset frame count for next GIF */
     };
     GIFGenerator.prototype.GCTWriter = function () {
         var _this = this;
@@ -235,6 +242,10 @@ var GIFGenerator = /** @class */function () {
         }
     };
     GIFGenerator.prototype.imgDataGenerator = function () {
+        // this._webWorker.LZWEncoder(this.width,
+        // 	this.height,
+        // 	this.frameIndexedPixels,
+        // 	8);
         var encoder = new LZWEncoder(this.width, this.height, this.frameIndexedPixels, 8);
         encoder.encode(this.stream);
         console.log("completed frame " + this.frameCount);
@@ -249,7 +260,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./EncodedImage":9}],21:[function(require,module,exports) {
+},{"./EncodedImage":11,"./WebWoker":56}],16:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -697,7 +708,7 @@ function NeuQuant(pixels, samplefac) {
 }
 
 // export default NeuQuant;
-},{}],44:[function(require,module,exports) {
+},{}],12:[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -711,28 +722,10 @@ var ColorTableGenerator = /** @class */function () {
         this._GCT = [];
         this._distribution = 51;
         this._colorLookup = {};
-        this._neuQuant = new NeuQuant_1.default(frame, 10);
+        this._neuQuant = new NeuQuant_1.default(frame, 20);
         this._neuQuant.buildColormap();
         this._colorTable = this._neuQuant.getColormap();
-        console.log(this._colorTable);
     }
-    // generate() {
-    // 	let count = 0;
-    // 	for (let red: number = 0; red < 256; red += this._distribution) {
-    // 		for (let green: number = 0; green < 256; green += this._distribution) {
-    // 			for (let blue: number = 0; blue < 256; blue += this._distribution) {
-    // 				const pixel = this.pad(red) + this.pad(green) + this.pad(blue);
-    // 				this._colorTable.push(pixel);
-    // 				this._colorLookup[pixel] = count;
-    // 				count++;
-    // 			}
-    // 		}
-    // 	}
-    // 	return {
-    // 		_colorLookup: this._colorLookup,
-    // 		_colorTable: this._colorTable
-    // 	};
-    // }
     ColorTableGenerator.prototype.generate = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
@@ -746,12 +739,16 @@ var ColorTableGenerator = /** @class */function () {
                     count++;
                     pixel = '';
                 }
-                if (index === _this._colorTable.length - 1) resolve({
-                    _colorLookup: _this._colorLookup,
-                    _colorTable: _this._GCT
-                });
+                if (index === _this._colorTable.length - 1) resolve([_this._colorLookup, _this._GCT]);
             });
         });
+    };
+    ColorTableGenerator.prototype.lookupRGB = function (pixel) {
+        var R = parseInt(pixel.substr(0, 2), 16);
+        var G = parseInt(pixel.substr(2, 2), 16);
+        var B = parseInt(pixel.substr(4, 2), 16);
+        var pixelIndex = this._neuQuant.lookupRGB(R, G, B);
+        return pixelIndex;
     };
     ColorTableGenerator.prototype.pad = function (color) {
         if (color < 16) {
@@ -763,7 +760,7 @@ var ColorTableGenerator = /** @class */function () {
     return ColorTableGenerator;
 }();
 exports.ColorTableGenerator = ColorTableGenerator;
-},{"./js/NeuQuant":21}],12:[function(require,module,exports) {
+},{"./js/NeuQuant":16}],13:[function(require,module,exports) {
 "use strict";
 
 var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -860,29 +857,35 @@ var GIFExporter = /** @class */function () {
         this._height = engine.getRenderHeight();
     }
     GIFExporter.prototype.start = function () {
-        var _this = this;
-        this.colorSetup();
-        console.log('​GIFExporter3 -> start -> ');
-        return new Promise(function (resolve, reject) {
-            return __awaiter(_this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            return [4 /*yield*/, this.getSnapShotDataFromCanvas()];
-                        case 1:
-                            _a.sent();
-                            // console.log(this._GCT);
-                            this._gifGenerator = new GIFGenerator_1.GIFGenerator(this._width, this._height, this._GCT);
-                            this._gifGenerator.init();
-                            console.log('setupImg complete');
-                            return [4 /*yield*/, this.processFrames(this._imageDataCollection)];
-                        case 2:
-                            _a.sent();
-                            // console.log(`finished`, this._imageDataCollection);
-                            resolve();
-                            return [2 /*return*/];
-                    }
-                });
+        return __awaiter(this, void 0, Promise, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        return [4 /*yield*/, this.generateColorTable()];
+                    case 1:
+                        _a.sent();
+                        console.log('​GIFExporter3 -> start -> ');
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                            return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            return [4 /*yield*/, this.getSnapShotDataFromCanvas()];
+                                        case 1:
+                                            _a.sent();
+                                            this.bootstrapGIF();
+                                            console.log('setupImg complete');
+                                            return [4 /*yield*/, this.processFrames(this._imageDataCollection)];
+                                        case 2:
+                                            _a.sent();
+                                            resolve(this._gifGenerator.getStream());
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            });
+                        })];
+                }
             });
         });
     };
@@ -890,16 +893,32 @@ var GIFExporter = /** @class */function () {
         console.log('​GIFExporter3 -> stop -> ');
         clearInterval(this._intervalRef);
     };
-    GIFExporter.prototype.download = function () {
-        return __awaiter(this, void 0, void 0, function () {
+    GIFExporter.prototype.download = function (filename) {
+        if (filename === void 0) {
+            filename = 'canvasGIF.gif';
+        }
+        return __awaiter(this, void 0, Promise, function () {
+            var imgData, url, download;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log('​GIFExporter3 -> download -> ');
                         return [4 /*yield*/, this.start()];
                     case 1:
-                        _a.sent();
-                        this._gifGenerator.download('testingGE3.gif');
+                        imgData = _a.sent();
+                        console.log('​GIFExporter3 -> download -> ');
+                        url = URL.createObjectURL(new Blob([new Uint8Array(imgData)], {
+                            type: 'image/gif'
+                        }));
+                        download = document.createElement('a');
+                        document.body.appendChild(download);
+                        download.target = '_blank';
+                        download.setAttribute('target', '_blank');
+                        download.style.display = 'none';
+                        download.href = url;
+                        download.download = filename;
+                        download.click();
+                        URL.revokeObjectURL(url);
+                        download.parentElement.removeChild(download);
                         return [2 /*return*/];
                 }
             });
@@ -909,10 +928,19 @@ var GIFExporter = /** @class */function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             _this._intervalRef = setInterval(function () {
-                var gl = _this._canvas.getContext('webgl2') || _this._canvas.getContext('webgl');
-                var pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-                gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                _this._imageDataCollection.push(pixels);
+                return __awaiter(_this, void 0, void 0, function () {
+                    var pixels;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                return [4 /*yield*/, this.getWebGLPixels()];
+                            case 1:
+                                pixels = _a.sent();
+                                this._imageDataCollection.push(pixels);
+                                return [2 /*return*/];
+                        }
+                    });
+                });
             }, _this._delay);
             setTimeout(function () {
                 _this.stop();
@@ -923,7 +951,7 @@ var GIFExporter = /** @class */function () {
     GIFExporter.prototype.processFrames = function (imageDataCollection) {
         var _this = this;
         console.log('​GIFExporter3 -> privateprocessFrames -> ');
-        new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
                 var count;
                 var _this = this;
@@ -938,7 +966,7 @@ var GIFExporter = /** @class */function () {
                                         return [4 /*yield*/, this.flipFrame(imgData)];
                                     case 1:
                                         imgData = _a.sent();
-                                        rgbData = this.removeAlpha(imgData);
+                                        rgbData = this.removeAlpha(imgData)[0];
                                         indexedData = this.mapPixelIndex(rgbData);
                                         this._gifGenerator.generateFrame(indexedData);
                                         if (--count === 0) resolve();
@@ -976,13 +1004,13 @@ var GIFExporter = /** @class */function () {
         var RGBPixelData = [];
         var RGBNumerical = [];
         for (var i = 0; i < colorArray.length; i += 4) {
-            var pixel = this.pad(this.snapColor(colorArray[i])) + this.pad(this.snapColor(colorArray[i + 1])) + this.pad(this.snapColor(colorArray[i + 2]));
+            var pixel = this.pad(colorArray[i]) + this.pad(colorArray[i + 1]) + this.pad(colorArray[i + 2]);
             RGBPixelData.push(pixel);
             RGBNumerical.push(colorArray[i]);
             RGBNumerical.push(colorArray[i + 1]);
             RGBNumerical.push(colorArray[i + 2]);
         }
-        return RGBNumerical;
+        return [RGBPixelData, RGBNumerical];
     };
     GIFExporter.prototype.pad = function (color) {
         if (color < 16) {
@@ -991,68 +1019,77 @@ var GIFExporter = /** @class */function () {
             return color.toString(16);
         }
     };
-    GIFExporter.prototype.snapColor = function (color) {
-        if (color % 51 > Math.floor(51 / 2)) {
-            color += 51 - color % 51;
-        } else {
-            color -= color % 51;
-        }
-        return color;
-    };
     GIFExporter.prototype.mapPixelIndex = function (rgbData) {
         var _this = this;
         var indexedPixels = [];
         rgbData.forEach(function (pixel) {
-            indexedPixels.push(_this._colorLookUpTable[pixel]);
+            if (_this._colorLookUpTable[pixel]) {
+                indexedPixels.push(_this._colorLookUpTable[pixel]);
+            } else {
+                indexedPixels.push(_this._colorTableGenerator.lookupRGB(pixel));
+            }
         });
         return indexedPixels;
     };
     GIFExporter.prototype.getColorFrame = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var gl, pixels, img, RBGData;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+        return __awaiter(this, void 0, Promise, function () {
+            var pixels, img, _a, RBGData;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
-                        pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-                        gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                        return [4 /*yield*/, this.flipFrame(pixels)];
+                        return [4 /*yield*/, this.getWebGLPixels()];
                     case 1:
-                        img = _a.sent();
-                        RBGData = this.removeAlpha(img);
-                        // console.log(RBGData);
+                        pixels = _b.sent();
+                        return [4 /*yield*/, this.flipFrame(pixels)];
+                    case 2:
+                        img = _b.sent();
+                        _a = this.removeAlpha(img), RBGData = _a[1];
                         return [2 /*return*/, RBGData];
                 }
             });
         });
     };
-    GIFExporter.prototype.colorSetup = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var RGBFrame, colorGenerator;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        return [4 /*yield*/, this.getColorFrame()];
-                    case 1:
-                        RGBFrame = _a.sent();
-                        return [4 /*yield*/, new ColorTableGenerator_1.ColorTableGenerator(RGBFrame).generate()];
-                    case 2:
-                        colorGenerator = _a.sent();
-                        console.log("colorGenerator", colorGenerator);
-                        this._colorLookUpTable = colorGenerator._colorLookup;
-                        this._GCT = colorGenerator._colorTable;
-                        this._gifGenerator = new GIFGenerator_1.GIFGenerator(this._width, this._height, this._GCT);
-                        // console.log(this._GCT);
-                        this._gifGenerator.init();
-                        return [2 /*return*/];
-                }
+    GIFExporter.prototype.generateColorTable = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            return __awaiter(_this, void 0, void 0, function () {
+                var _a, RGBFrame;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            return [4 /*yield*/, this.getColorFrame()];
+                        case 1:
+                            RGBFrame = _b.sent();
+                            this._colorTableGenerator = new ColorTableGenerator_1.ColorTableGenerator(RGBFrame);
+                            return [4 /*yield*/, this._colorTableGenerator.generate()];
+                        case 2:
+                            _a = _b.sent(), this._colorLookUpTable = _a[0], this._GCT = _a[1];
+                            this._gifGenerator = new GIFGenerator_1.GIFGenerator(this._width, this._height, this._GCT);
+                            this._gifGenerator.init();
+                            resolve();
+                            return [2 /*return*/];
+                    }
+                });
             });
+        });
+    };
+    GIFExporter.prototype.bootstrapGIF = function () {
+        this._gifGenerator = new GIFGenerator_1.GIFGenerator(this._width, this._height, this._GCT);
+        this._gifGenerator.init();
+    };
+    GIFExporter.prototype.getWebGLPixels = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var gl = _this._canvas.getContext('webgl2') || _this._canvas.getContext('webgl');
+            var pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+            gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            resolve(pixels);
         });
     };
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./GIFGenerator":11,"./ColorTableGenerator":44}],9:[function(require,module,exports) {
+},{"./GIFGenerator":14,"./ColorTableGenerator":12}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1081,7 +1118,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '63538' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '12252' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1222,5 +1259,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[9,12], null)
+},{}]},{},[29,13], null)
 //# sourceMappingURL=/GIFExporter.2ef04d87.map

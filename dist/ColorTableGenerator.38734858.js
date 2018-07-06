@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({21:[function(require,module,exports) {
+})({16:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -551,7 +551,7 @@ function NeuQuant(pixels, samplefac) {
 }
 
 // export default NeuQuant;
-},{}],44:[function(require,module,exports) {
+},{}],12:[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -565,28 +565,10 @@ var ColorTableGenerator = /** @class */function () {
         this._GCT = [];
         this._distribution = 51;
         this._colorLookup = {};
-        this._neuQuant = new NeuQuant_1.default(frame, 10);
+        this._neuQuant = new NeuQuant_1.default(frame, 20);
         this._neuQuant.buildColormap();
         this._colorTable = this._neuQuant.getColormap();
-        console.log(this._colorTable);
     }
-    // generate() {
-    // 	let count = 0;
-    // 	for (let red: number = 0; red < 256; red += this._distribution) {
-    // 		for (let green: number = 0; green < 256; green += this._distribution) {
-    // 			for (let blue: number = 0; blue < 256; blue += this._distribution) {
-    // 				const pixel = this.pad(red) + this.pad(green) + this.pad(blue);
-    // 				this._colorTable.push(pixel);
-    // 				this._colorLookup[pixel] = count;
-    // 				count++;
-    // 			}
-    // 		}
-    // 	}
-    // 	return {
-    // 		_colorLookup: this._colorLookup,
-    // 		_colorTable: this._colorTable
-    // 	};
-    // }
     ColorTableGenerator.prototype.generate = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
@@ -600,12 +582,16 @@ var ColorTableGenerator = /** @class */function () {
                     count++;
                     pixel = '';
                 }
-                if (index === _this._colorTable.length - 1) resolve({
-                    _colorLookup: _this._colorLookup,
-                    _colorTable: _this._GCT
-                });
+                if (index === _this._colorTable.length - 1) resolve([_this._colorLookup, _this._GCT]);
             });
         });
+    };
+    ColorTableGenerator.prototype.lookupRGB = function (pixel) {
+        var R = parseInt(pixel.substr(0, 2), 16);
+        var G = parseInt(pixel.substr(2, 2), 16);
+        var B = parseInt(pixel.substr(4, 2), 16);
+        var pixelIndex = this._neuQuant.lookupRGB(R, G, B);
+        return pixelIndex;
     };
     ColorTableGenerator.prototype.pad = function (color) {
         if (color < 16) {
@@ -617,7 +603,7 @@ var ColorTableGenerator = /** @class */function () {
     return ColorTableGenerator;
 }();
 exports.ColorTableGenerator = ColorTableGenerator;
-},{"./js/NeuQuant":21}],9:[function(require,module,exports) {
+},{"./js/NeuQuant":16}],29:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -646,7 +632,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '63538' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '12252' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -787,5 +773,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[9,44], null)
+},{}]},{},[29,12], null)
 //# sourceMappingURL=/ColorTableGenerator.38734858.map
