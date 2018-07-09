@@ -451,34 +451,34 @@ var GIFGenerator = /** @class */function () {
     }
     GIFGenerator.prototype.init = function () {
         this._webWorker = new worker_service_1.WorkerService();
-        this.headerGenerator();
-        this.LSDGenerator();
-        this.GCTWriter();
-        this.AppExtGenerator();
+        this.writeHeader();
+        this.writeLogicalScreenDescriptor();
+        this.writeGlobalColorTable();
+        this.writeApplicationExtension();
     };
     GIFGenerator.prototype.generateFrame = function (indexedPixels) {
         this.frameIndexedPixels = indexedPixels;
         this.frameCount += 1;
         console.log("generating frame " + this.frameCount);
-        this.GCEGenerator();
-        this.imgDescGenerator();
-        this.imgDataGenerator();
+        this.writeGraphicControlExtension();
+        this.writeImageDescriptor();
+        this.writeImageData();
     };
     GIFGenerator.prototype.getStream = function () {
-        this.TrailerGenerator();
+        this.writeTrailer();
         return this.stream.get();
     };
-    GIFGenerator.prototype.headerGenerator = function () {
+    GIFGenerator.prototype.writeHeader = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */
     };
-    GIFGenerator.prototype.LSDGenerator = function () {
+    GIFGenerator.prototype.writeLogicalScreenDescriptor = function () {
         this.stream.writeLittleEndian(this.width); /* Canvas Width */
         this.stream.writeLittleEndian(this.height); /* Canvas Height */
         this.stream.write(0xf7); /* Packed Field */
         this.stream.write(0); /* Background Color Index */
         this.stream.write(0); /* Pixel Aspect Ration */
     };
-    GIFGenerator.prototype.GCEGenerator = function () {
+    GIFGenerator.prototype.writeGraphicControlExtension = function () {
         this.stream.write(0x21); /* Extension Introducer */
         this.stream.write(0xf9); /* Graphic Control Label */
         this.stream.write(0x4); /* Byte Size */
@@ -487,7 +487,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.write(0x0); /* Transparent Color Index */
         this.stream.write(0x0); /* Block Terminator */
     };
-    GIFGenerator.prototype.imgDescGenerator = function () {
+    GIFGenerator.prototype.writeImageDescriptor = function () {
         this.stream.write(0x2c); /* Image Seperator Always 2C */
         this.stream.writeLittleEndian(0x0); /* Image Left */
         this.stream.writeLittleEndian(0x0); /* Image Top */
@@ -495,7 +495,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.writeLittleEndian(this.height); /* Image Height */
         this.stream.write(0x0); /* Block Terminator */
     };
-    GIFGenerator.prototype.AppExtGenerator = function () {
+    GIFGenerator.prototype.writeApplicationExtension = function () {
         this.stream.write(0x21); /* extension introducer */
         this.stream.write(0xff); /* app extension label */
         this.stream.write(11); /* block size */
@@ -505,12 +505,12 @@ var GIFGenerator = /** @class */function () {
         this.stream.writeLittleEndian(0); /* loop count (extra iterations, 0=repeat forever) */
         this.stream.write(0); /* Block Terminator */
     };
-    GIFGenerator.prototype.TrailerGenerator = function () {
+    GIFGenerator.prototype.writeTrailer = function () {
         this.stream.write(0x3b); /* Trailer Marker */
         console.log("Generator now finished.");
         this.frameCount = 0; /* Reset frame count for next GIF */
     };
-    GIFGenerator.prototype.GCTWriter = function () {
+    GIFGenerator.prototype.writeGlobalColorTable = function () {
         var _this = this;
         var count = 0;
         this.GCT.forEach(function (color) {
@@ -521,7 +521,7 @@ var GIFGenerator = /** @class */function () {
             this.stream.write(0);
         }
     };
-    GIFGenerator.prototype.imgDataGenerator = function () {
+    GIFGenerator.prototype.writeImageData = function () {
         return __awaiter(this, void 0, Promise, function () {
             var encoder;
             return __generator(this, function (_a) {
@@ -532,9 +532,9 @@ var GIFGenerator = /** @class */function () {
             });
         });
     };
-    GIFGenerator.prototype.LCTGenerator = function () {};
-    GIFGenerator.prototype.PlainTextExtGenerator = function () {};
-    GIFGenerator.prototype.CommentExtGenerator = function () {};
+    GIFGenerator.prototype.writeLocalColorTable = function () {};
+    GIFGenerator.prototype.writePlainTextExtension = function () {};
+    GIFGenerator.prototype.writeCommentExtension = function () {};
     GIFGenerator.prototype.writeLittleEndian = function (num) {
         this.stream.write(num & 0xff);
         this.stream.write(num >> 8 & 0xff);

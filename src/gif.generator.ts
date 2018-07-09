@@ -20,31 +20,31 @@ export class GIFGenerator {
 
 	public init(): void {
 		this._webWorker = new WorkerService();
-		this.headerGenerator();
-		this.LSDGenerator();
-		this.GCTWriter();
-		this.AppExtGenerator();
+		this.writeHeader();
+		this.writeLogicalScreenDescriptor();
+		this.writeGlobalColorTable();
+		this.writeApplicationExtension();
 	}
 
 	public generateFrame(indexedPixels: number[]): void {
 		this.frameIndexedPixels = indexedPixels;
 		this.frameCount += 1;
 		console.log(`generating frame ${this.frameCount}`);
-		this.GCEGenerator();
-		this.imgDescGenerator();
-		this.imgDataGenerator();
+		this.writeGraphicControlExtension();
+		this.writeImageDescriptor();
+		this.writeImageData();
 	}
 
 	public getStream(): number[] {
-		this.TrailerGenerator();
+		this.writeTrailer();
 		return this.stream.get();
 	}
 
-	private headerGenerator(): void {
+	private writeHeader(): void {
 		this.stream.writeUTF('GIF89a'); /* GIF Header */
 	}
 
-	private LSDGenerator(): void {
+	private writeLogicalScreenDescriptor(): void {
 		this.stream.writeLittleEndian(this.width); /* Canvas Width */
 		this.stream.writeLittleEndian(this.height); /* Canvas Height */
 		this.stream.write(0xf7); /* Packed Field */
@@ -52,7 +52,7 @@ export class GIFGenerator {
 		this.stream.write(0); /* Pixel Aspect Ration */
 	}
 
-	private GCEGenerator(): void {
+	private writeGraphicControlExtension(): void {
 		this.stream.write(0x21); /* Extension Introducer */
 		this.stream.write(0xf9); /* Graphic Control Label */
 		this.stream.write(0x4); /* Byte Size */
@@ -62,7 +62,7 @@ export class GIFGenerator {
 		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	private imgDescGenerator(): void {
+	private writeImageDescriptor(): void {
 		this.stream.write(0x2c); /* Image Seperator Always 2C */
 		this.stream.writeLittleEndian(0x0); /* Image Left */
 		this.stream.writeLittleEndian(0x0); /* Image Top */
@@ -71,7 +71,7 @@ export class GIFGenerator {
 		this.stream.write(0x0); /* Block Terminator */
 	}
 
-	private AppExtGenerator(): void {
+	private writeApplicationExtension(): void {
 		this.stream.write(0x21); /* extension introducer */
 		this.stream.write(0xff); /* app extension label */
 		this.stream.write(11); /* block size */
@@ -84,13 +84,13 @@ export class GIFGenerator {
 		this.stream.write(0); /* Block Terminator */
 	}
 
-	private TrailerGenerator(): void {
+	private writeTrailer(): void {
 		this.stream.write(0x3b); /* Trailer Marker */
 		console.log(`Generator now finished.`);
 		this.frameCount = 0; /* Reset frame count for next GIF */
 	}
 
-	private GCTWriter(): void {
+	private writeGlobalColorTable(): void {
 		let count = 0;
 
 		this.GCT.forEach(color => {
@@ -103,7 +103,7 @@ export class GIFGenerator {
 		}
 	}
 
-	private async imgDataGenerator(): Promise<void> {
+	private async writeImageData(): Promise<void> {
 		// await this._webWorker.LZW({
 		// 	width: this.width,
 		// 	height: this.height,
@@ -125,11 +125,11 @@ export class GIFGenerator {
 		console.log(`completed frame ${this.frameCount}`);
 	}
 
-	private LCTGenerator(): void {}
+	private writeLocalColorTable(): void {}
 
-	private PlainTextExtGenerator(): void {}
+	private writePlainTextExtension(): void {}
 
-	private CommentExtGenerator(): void {}
+	private writeCommentExtension(): void {}
 
 	private writeLittleEndian(num: number): void {
 		this.stream.write(num & 0xff);

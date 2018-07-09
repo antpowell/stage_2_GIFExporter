@@ -2,11 +2,10 @@ import { GIFGenerator } from './gif.generator';
 import { ColorTableGenerator } from './color.table.generator';
 
 export class GIFExporter {
-	private _engine: BABYLON.Engine;
 	private _canvas: HTMLCanvasElement;
 	private _delay: number;
 	private _duration: number;
-	private _GCT: string[];
+	private _GlobalColorTable: string[];
 	private _intervalRef: number;
 	private _width: number;
 	private _height: number;
@@ -14,13 +13,11 @@ export class GIFExporter {
 	private _gifGenerator: GIFGenerator;
 	private _colorLookUpTable: { [index: string]: number };
 	private _colorTableGenerator: ColorTableGenerator;
-	private _downloading: any;
 
 	constructor(
 		engine: BABYLON.Engine,
 		options?: { delay?: number; duration?: number; GCT?: string[] }
 	) {
-		this._engine = engine;
 		this._canvas = engine.getRenderingCanvas();
 		this._delay = options.delay;
 		this._duration = options.duration;
@@ -101,20 +98,19 @@ export class GIFExporter {
 				0; /* | 0 faster version of Math.floor for positive numbers */
 			const bytesPerRow = this._width * 4;
 
-			// make a temp buffer to hold one row
-			var row = new Uint8Array(this._width * 4);
-			for (var rowIndex = 0; rowIndex < split; ++rowIndex) {
-				var topOffset = rowIndex * bytesPerRow;
-				var bottomOffset = (this._height - rowIndex - 1) * bytesPerRow;
+			let singleRow = new Uint8Array(this._width * 4);
+			for (let rowIndex = 0; rowIndex < split; ++rowIndex) {
+				let topOffset = rowIndex * bytesPerRow;
+				let bottomOffset = (this._height - rowIndex - 1) * bytesPerRow;
 
 				// make copy of a row on the top half
-				row.set(frame.subarray(topOffset, topOffset + bytesPerRow));
+				singleRow.set(frame.subarray(topOffset, topOffset + bytesPerRow));
 
 				// copy a row from the bottom half to the top
 				frame.copyWithin(topOffset, bottomOffset, bottomOffset + bytesPerRow);
 
 				// copy the copy of the top half row to the bottom half
-				frame.set(row, bottomOffset);
+				frame.set(singleRow, bottomOffset);
 
 				if (rowIndex < split) resolve(frame);
 			}
@@ -174,13 +170,13 @@ export class GIFExporter {
 
 			[
 				this._colorLookUpTable,
-				this._GCT,
+				this._GlobalColorTable,
 			] = await this._colorTableGenerator.generate();
 
 			this._gifGenerator = new GIFGenerator(
 				this._width,
 				this._height,
-				this._GCT
+				this._GlobalColorTable
 			);
 			this._gifGenerator.init();
 			resolve();
@@ -188,7 +184,11 @@ export class GIFExporter {
 	}
 
 	private bootstrapGIF(): void {
-		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GCT);
+		this._gifGenerator = new GIFGenerator(
+			this._width,
+			this._height,
+			this._GlobalColorTable
+		);
 		this._gifGenerator.init();
 	}
 

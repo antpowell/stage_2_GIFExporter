@@ -451,34 +451,34 @@ var GIFGenerator = /** @class */function () {
     }
     GIFGenerator.prototype.init = function () {
         this._webWorker = new worker_service_1.WorkerService();
-        this.headerGenerator();
-        this.LSDGenerator();
-        this.GCTWriter();
-        this.AppExtGenerator();
+        this.writeHeader();
+        this.writeLogicalScreenDescriptor();
+        this.writeGlobalColorTable();
+        this.writeApplicationExtension();
     };
     GIFGenerator.prototype.generateFrame = function (indexedPixels) {
         this.frameIndexedPixels = indexedPixels;
         this.frameCount += 1;
         console.log("generating frame " + this.frameCount);
-        this.GCEGenerator();
-        this.imgDescGenerator();
-        this.imgDataGenerator();
+        this.writeGraphicControlExtension();
+        this.writeImageDescriptor();
+        this.writeImageData();
     };
     GIFGenerator.prototype.getStream = function () {
-        this.TrailerGenerator();
+        this.writeTrailer();
         return this.stream.get();
     };
-    GIFGenerator.prototype.headerGenerator = function () {
+    GIFGenerator.prototype.writeHeader = function () {
         this.stream.writeUTF('GIF89a'); /* GIF Header */
     };
-    GIFGenerator.prototype.LSDGenerator = function () {
+    GIFGenerator.prototype.writeLogicalScreenDescriptor = function () {
         this.stream.writeLittleEndian(this.width); /* Canvas Width */
         this.stream.writeLittleEndian(this.height); /* Canvas Height */
         this.stream.write(0xf7); /* Packed Field */
         this.stream.write(0); /* Background Color Index */
         this.stream.write(0); /* Pixel Aspect Ration */
     };
-    GIFGenerator.prototype.GCEGenerator = function () {
+    GIFGenerator.prototype.writeGraphicControlExtension = function () {
         this.stream.write(0x21); /* Extension Introducer */
         this.stream.write(0xf9); /* Graphic Control Label */
         this.stream.write(0x4); /* Byte Size */
@@ -487,7 +487,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.write(0x0); /* Transparent Color Index */
         this.stream.write(0x0); /* Block Terminator */
     };
-    GIFGenerator.prototype.imgDescGenerator = function () {
+    GIFGenerator.prototype.writeImageDescriptor = function () {
         this.stream.write(0x2c); /* Image Seperator Always 2C */
         this.stream.writeLittleEndian(0x0); /* Image Left */
         this.stream.writeLittleEndian(0x0); /* Image Top */
@@ -495,7 +495,7 @@ var GIFGenerator = /** @class */function () {
         this.stream.writeLittleEndian(this.height); /* Image Height */
         this.stream.write(0x0); /* Block Terminator */
     };
-    GIFGenerator.prototype.AppExtGenerator = function () {
+    GIFGenerator.prototype.writeApplicationExtension = function () {
         this.stream.write(0x21); /* extension introducer */
         this.stream.write(0xff); /* app extension label */
         this.stream.write(11); /* block size */
@@ -505,12 +505,12 @@ var GIFGenerator = /** @class */function () {
         this.stream.writeLittleEndian(0); /* loop count (extra iterations, 0=repeat forever) */
         this.stream.write(0); /* Block Terminator */
     };
-    GIFGenerator.prototype.TrailerGenerator = function () {
+    GIFGenerator.prototype.writeTrailer = function () {
         this.stream.write(0x3b); /* Trailer Marker */
         console.log("Generator now finished.");
         this.frameCount = 0; /* Reset frame count for next GIF */
     };
-    GIFGenerator.prototype.GCTWriter = function () {
+    GIFGenerator.prototype.writeGlobalColorTable = function () {
         var _this = this;
         var count = 0;
         this.GCT.forEach(function (color) {
@@ -521,7 +521,7 @@ var GIFGenerator = /** @class */function () {
             this.stream.write(0);
         }
     };
-    GIFGenerator.prototype.imgDataGenerator = function () {
+    GIFGenerator.prototype.writeImageData = function () {
         return __awaiter(this, void 0, Promise, function () {
             var encoder;
             return __generator(this, function (_a) {
@@ -532,9 +532,9 @@ var GIFGenerator = /** @class */function () {
             });
         });
     };
-    GIFGenerator.prototype.LCTGenerator = function () {};
-    GIFGenerator.prototype.PlainTextExtGenerator = function () {};
-    GIFGenerator.prototype.CommentExtGenerator = function () {};
+    GIFGenerator.prototype.writeLocalColorTable = function () {};
+    GIFGenerator.prototype.writePlainTextExtension = function () {};
+    GIFGenerator.prototype.writeCommentExtension = function () {};
     GIFGenerator.prototype.writeLittleEndian = function (num) {
         this.stream.write(num & 0xff);
         this.stream.write(num >> 8 & 0xff);
@@ -1131,7 +1131,6 @@ var color_table_generator_1 = require("./color.table.generator");
 var GIFExporter = /** @class */function () {
     function GIFExporter(engine, options) {
         this._imageDataCollection = [];
-        this._engine = engine;
         this._canvas = engine.getRenderingCanvas();
         this._delay = options.delay;
         this._duration = options.duration;
@@ -1267,17 +1266,16 @@ var GIFExporter = /** @class */function () {
         return new Promise(function (resolve, reject) {
             var split = _this._height / 2 | 0; /* | 0 faster version of Math.floor for positive numbers */
             var bytesPerRow = _this._width * 4;
-            // make a temp buffer to hold one row
-            var row = new Uint8Array(_this._width * 4);
+            var singleRow = new Uint8Array(_this._width * 4);
             for (var rowIndex = 0; rowIndex < split; ++rowIndex) {
                 var topOffset = rowIndex * bytesPerRow;
                 var bottomOffset = (_this._height - rowIndex - 1) * bytesPerRow;
                 // make copy of a row on the top half
-                row.set(frame.subarray(topOffset, topOffset + bytesPerRow));
+                singleRow.set(frame.subarray(topOffset, topOffset + bytesPerRow));
                 // copy a row from the bottom half to the top
                 frame.copyWithin(topOffset, bottomOffset, bottomOffset + bytesPerRow);
                 // copy the copy of the top half row to the bottom half
-                frame.set(row, bottomOffset);
+                frame.set(singleRow, bottomOffset);
                 if (rowIndex < split) resolve(frame);
             }
         });
@@ -1345,8 +1343,8 @@ var GIFExporter = /** @class */function () {
                             this._colorTableGenerator = new color_table_generator_1.ColorTableGenerator(RGBFrame);
                             return [4 /*yield*/, this._colorTableGenerator.generate()];
                         case 2:
-                            _a = _b.sent(), this._colorLookUpTable = _a[0], this._GCT = _a[1];
-                            this._gifGenerator = new gif_generator_1.GIFGenerator(this._width, this._height, this._GCT);
+                            _a = _b.sent(), this._colorLookUpTable = _a[0], this._GlobalColorTable = _a[1];
+                            this._gifGenerator = new gif_generator_1.GIFGenerator(this._width, this._height, this._GlobalColorTable);
                             this._gifGenerator.init();
                             resolve();
                             return [2 /*return*/];
@@ -1356,7 +1354,7 @@ var GIFExporter = /** @class */function () {
         });
     };
     GIFExporter.prototype.bootstrapGIF = function () {
-        this._gifGenerator = new gif_generator_1.GIFGenerator(this._width, this._height, this._GCT);
+        this._gifGenerator = new gif_generator_1.GIFGenerator(this._width, this._height, this._GlobalColorTable);
         this._gifGenerator.init();
     };
     GIFExporter.prototype.getWebGLPixels = function () {
@@ -1619,5 +1617,135 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[40,11], null)
+},{}],44:[function(require,module,exports) {
+var bundleURL = null;
+function getBundleURLCached() {
+  if (!bundleURL) {
+    bundleURL = getBundleURL();
+  }
+
+  return bundleURL;
+}
+
+function getBundleURL() {
+  // Attempt to find the URL of the current script and use that as the base URL
+  try {
+    throw new Error();
+  } catch (err) {
+    var matches = ('' + err.stack).match(/(https?|file|ftp):\/\/[^)\n]+/g);
+    if (matches) {
+      return getBaseURL(matches[0]);
+    }
+  }
+
+  return '/';
+}
+
+function getBaseURL(url) {
+  return ('' + url).replace(/^((?:https?|file|ftp):\/\/.+)\/[^/]+$/, '$1') + '/';
+}
+
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+},{}],42:[function(require,module,exports) {
+var getBundleURL = require('./bundle-url').getBundleURL;
+
+function loadBundlesLazy(bundles) {
+  if (!Array.isArray(bundles)) {
+    bundles = [bundles];
+  }
+
+  var id = bundles[bundles.length - 1];
+
+  try {
+    return Promise.resolve(require(id));
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      return new LazyPromise(function (resolve, reject) {
+        loadBundles(bundles.slice(0, -1)).then(function () {
+          return require(id);
+        }).then(resolve, reject);
+      });
+    }
+
+    throw err;
+  }
+}
+
+function loadBundles(bundles) {
+  return Promise.all(bundles.map(loadBundle));
+}
+
+var bundleLoaders = {};
+function registerBundleLoader(type, loader) {
+  bundleLoaders[type] = loader;
+}
+
+module.exports = exports = loadBundlesLazy;
+exports.load = loadBundles;
+exports.register = registerBundleLoader;
+
+var bundles = {};
+function loadBundle(bundle) {
+  var id;
+  if (Array.isArray(bundle)) {
+    id = bundle[1];
+    bundle = bundle[0];
+  }
+
+  if (bundles[bundle]) {
+    return bundles[bundle];
+  }
+
+  var type = (bundle.substring(bundle.lastIndexOf('.') + 1, bundle.length) || bundle).toLowerCase();
+  var bundleLoader = bundleLoaders[type];
+  if (bundleLoader) {
+    return bundles[bundle] = bundleLoader(getBundleURL() + bundle).then(function (resolved) {
+      if (resolved) {
+        module.bundle.register(id, resolved);
+      }
+
+      return resolved;
+    });
+  }
+}
+
+function LazyPromise(executor) {
+  this.executor = executor;
+  this.promise = null;
+}
+
+LazyPromise.prototype.then = function (onSuccess, onError) {
+  if (this.promise === null) this.promise = new Promise(this.executor);
+  return this.promise.then(onSuccess, onError);
+};
+
+LazyPromise.prototype.catch = function (onError) {
+  if (this.promise === null) this.promise = new Promise(this.executor);
+  return this.promise.catch(onError);
+};
+},{"./bundle-url":44}],46:[function(require,module,exports) {
+module.exports = function loadJSBundle(bundle) {
+  return new Promise(function (resolve, reject) {
+    var script = document.createElement('script');
+    script.async = true;
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = bundle;
+    script.onerror = function (e) {
+      script.onerror = script.onload = null;
+      reject(e);
+    };
+
+    script.onload = function () {
+      script.onerror = script.onload = null;
+      resolve();
+    };
+
+    document.getElementsByTagName('head')[0].appendChild(script);
+  });
+};
+},{}],0:[function(require,module,exports) {
+var b=require(42);b.register("js",require(46));
+},{}]},{},[40,0,11], null)
 //# sourceMappingURL=/game.87537101.map

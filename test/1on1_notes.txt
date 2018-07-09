@@ -14,3 +14,11 @@
 #Ensure CELA compliance ✔
 #Review BABYLON
 #Resize on WEBGL ??Check how DOM resizes images??
+
+#Spell out variables ✔
+#Spell babylon correctly in the package.json ✔ just did a total rename because this is not the entire Babylon lib just the GIF Exporter for Babylon
+#Reset all frames after completions of ColorGenerator
+#Remove all logs from encoder
+#Create GIF Image OBJ
+#Stop should be cancel and create stop function to take over set timeout
+#GIFGenerator swap name to write***** ✔
