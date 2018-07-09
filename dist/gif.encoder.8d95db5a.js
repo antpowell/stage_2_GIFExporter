@@ -1174,6 +1174,7 @@ var GIFExporter = /** @class */function () {
         console.log('​GIFExporter3 -> stop -> ');
         clearInterval(this._intervalRef);
     };
+    GIFExporter.prototype.cancel = function () {};
     GIFExporter.prototype.download = function (filename) {
         if (filename === void 0) {
             filename = 'canvasGIF.gif';
@@ -1238,6 +1239,20 @@ var GIFExporter = /** @class */function () {
                 var _this = this;
                 return __generator(this, function (_a) {
                     count = imageDataCollection.length;
+                    // const frameCollection: number[][] = [];
+                    // const frameCollection: number[][] = imageDataCollection.map(frame => {
+                    // 	const mid = this._height / 2 | 0;
+                    // 	const xLen = this._width * 4;
+                    // 	const singleRow = new Uint8Array(xLen);
+                    // 	for(let row = 0; row < mid; row ++){
+                    // 		const top = row * xLen;
+                    // 		const bottom = (this._height - row - 1) * xLen;
+                    // 		[frame.subarray(mid), frame.subarray(mid +1)] = [frame.subarray(mid +1), frame.subarray(mid)]
+                    // 		singleRow.set(frame.subarray(top, top + xLen));
+                    // 		frame.copyWithin(top, bottom, bottom + xLen);
+                    // 		frame.set(singleRow, bottom);
+                    // 	}
+                    // })
                     imageDataCollection.forEach(function (imgData) {
                         return __awaiter(_this, void 0, void 0, function () {
                             var rgbData, indexedData;
@@ -1249,6 +1264,7 @@ var GIFExporter = /** @class */function () {
                                         imgData = _a.sent();
                                         rgbData = this.removeAlpha(imgData)[0];
                                         indexedData = this.mapPixelIndex(rgbData);
+                                        // frameCollection.push(indexedData);
                                         this._gifGenerator.generateFrame(indexedData);
                                         if (--count === 0) resolve();
                                         return [2 /*return*/];
@@ -1333,7 +1349,7 @@ var GIFExporter = /** @class */function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
-                var _a, RGBFrame;
+                var _a, RGBFrame, gifWorker;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
@@ -1344,6 +1360,16 @@ var GIFExporter = /** @class */function () {
                             return [4 /*yield*/, this._colorTableGenerator.generate()];
                         case 2:
                             _a = _b.sent(), this._colorLookUpTable = _a[0], this._GlobalColorTable = _a[1];
+                            gifWorker = new Worker("/gif.generator.service.f06368d6.js");
+                            gifWorker.postMessage({ message: 'init', data: { width: this._width, height: this._height, GCT: this._GlobalColorTable } });
+                            gifWorker.onmessage = function (_a) {
+                                var _b = _a.data,
+                                    message = _b.message,
+                                    data = _b.data;
+                                if (message === 'init complete') {
+                                    resolve();
+                                }
+                            };
                             this._gifGenerator = new gif_generator_1.GIFGenerator(this._width, this._height, this._GlobalColorTable);
                             this._gifGenerator.init();
                             resolve();
@@ -1369,7 +1395,7 @@ var GIFExporter = /** @class */function () {
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./gif.generator":15,"./color.table.generator":14}],40:[function(require,module,exports) {
+},{"./gif.generator":15,"./color.table.generator":14,"./gif.generator.service.ts":56}],40:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1668,6 +1694,6 @@ module.exports = function loadJSBundle(bundle) {
   });
 };
 },{}],0:[function(require,module,exports) {
-var b=require(42);b.register("js",require(46));b.load([["lzw.service.d93058d8.js",37]]).then(function(){require(16);});
+var b=require(42);b.register("js",require(46));b.load([["lzw.service.d93058d8.js",37],["gif.generator.service.f06368d6.js",56]]).then(function(){require(16);});
 },{}]},{},[40,0], null)
 //# sourceMappingURL=/gif.encoder.8d95db5a.map

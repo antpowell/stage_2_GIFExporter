@@ -14,10 +14,7 @@ export class GIFExporter {
 	private _colorLookUpTable: { [index: string]: number };
 	private _colorTableGenerator: ColorTableGenerator;
 
-	constructor(
-		engine: BABYLON.Engine,
-		options?: { delay?: number; duration?: number; GCT?: string[] }
-	) {
+	constructor(engine: BABYLON.Engine, options?: { delay?: number; duration?: number; GCT?: string[] }) {
 		this._canvas = engine.getRenderingCanvas();
 		this._delay = options.delay;
 		this._duration = options.duration;
@@ -43,6 +40,8 @@ export class GIFExporter {
 		console.log('​GIFExporter3 -> stop -> ');
 		clearInterval(this._intervalRef);
 	}
+
+	public cancel() {}
 
 	public async download(filename = 'canvasGIF.gif'): Promise<void> {
 		const imgData = await this.start();
@@ -81,10 +80,30 @@ export class GIFExporter {
 		console.log('​GIFExporter3 -> privateprocessFrames -> ');
 		return new Promise(async (resolve, reject) => {
 			let count = imageDataCollection.length;
+			// const frameCollection: number[][] = [];
+			// const frameCollection: number[][] = imageDataCollection.map(frame => {
+			// 	const mid = this._height / 2 | 0;
+			// 	const xLen = this._width * 4;
+
+			// 	const singleRow = new Uint8Array(xLen);
+			// 	for(let row = 0; row < mid; row ++){
+			// 		const top = row * xLen;
+			// 		const bottom = (this._height - row - 1) * xLen;
+
+			// 		[frame.subarray(mid), frame.subarray(mid +1)] = [frame.subarray(mid +1), frame.subarray(mid)]
+
+			// 		singleRow.set(frame.subarray(top, top + xLen));
+			// 		frame.copyWithin(top, bottom, bottom + xLen);
+			// 		frame.set(singleRow, bottom);
+
+			// 	}
+
+			// })
 			imageDataCollection.forEach(async imgData => {
 				imgData = (await this.flipFrame(imgData)) as Uint8Array;
 				const [rgbData] = this.removeAlpha(imgData);
 				const indexedData = this.mapPixelIndex(rgbData as string[]);
+				// frameCollection.push(indexedData);
 				this._gifGenerator.generateFrame(indexedData);
 				if (--count === 0) resolve();
 			});
@@ -93,9 +112,7 @@ export class GIFExporter {
 
 	private flipFrame(frame: Uint8Array): Promise<Uint8Array> {
 		return new Promise((resolve, reject) => {
-			const split =
-				(this._height / 2) |
-				0; /* | 0 faster version of Math.floor for positive numbers */
+			const split = (this._height / 2) | 0; /* | 0 faster version of Math.floor for positive numbers */
 			const bytesPerRow = this._width * 4;
 
 			let singleRow = new Uint8Array(this._width * 4);
@@ -121,10 +138,7 @@ export class GIFExporter {
 		let RGBPixelData: string[] = [];
 		let RGBNumerical: number[] = [];
 		for (let i = 0; i < colorArray.length; i += 4) {
-			const pixel =
-				this.pad(colorArray[i]) +
-				this.pad(colorArray[i + 1]) +
-				this.pad(colorArray[i + 2]);
+			const pixel = this.pad(colorArray[i]) + this.pad(colorArray[i + 1]) + this.pad(colorArray[i + 2]);
 
 			RGBPixelData.push(pixel);
 			RGBNumerical.push(colorArray[i]);
@@ -168,46 +182,33 @@ export class GIFExporter {
 			const RGBFrame = await this.getColorFrame();
 			this._colorTableGenerator = new ColorTableGenerator(RGBFrame);
 
-			[
-				this._colorLookUpTable,
-				this._GlobalColorTable,
-			] = await this._colorTableGenerator.generate();
+			[this._colorLookUpTable, this._GlobalColorTable] = await this._colorTableGenerator.generate();
 
-			this._gifGenerator = new GIFGenerator(
-				this._width,
-				this._height,
-				this._GlobalColorTable
-			);
+			const gifWorker = new Worker('./gif.generator.service.ts');
+
+			gifWorker.postMessage({ message: 'init', data: { width: this._width, height: this._height, GCT: this._GlobalColorTable } });
+			gifWorker.onmessage = ({ data: { message, data } }) => {
+				if (message === 'init complete') {
+					resolve();
+				}
+			};
+
+			this._gifGenerator = new GIFGenerator(this._width, this._height, this._GlobalColorTable);
 			this._gifGenerator.init();
 			resolve();
 		});
 	}
 
 	private bootstrapGIF(): void {
-		this._gifGenerator = new GIFGenerator(
-			this._width,
-			this._height,
-			this._GlobalColorTable
-		);
+		this._gifGenerator = new GIFGenerator(this._width, this._height, this._GlobalColorTable);
 		this._gifGenerator.init();
 	}
 
 	private getWebGLPixels(): Promise<Uint8Array> {
 		return new Promise((resolve, reject) => {
-			const gl =
-				this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
-			const pixels = new Uint8Array(
-				gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-			);
-			gl.readPixels(
-				0,
-				0,
-				gl.drawingBufferWidth,
-				gl.drawingBufferHeight,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
-				pixels
-			);
+			const gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
+			const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+			gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 			resolve(pixels);
 		});
 	}
