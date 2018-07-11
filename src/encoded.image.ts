@@ -34,4 +34,8 @@ export class EncodedImage {
 		this.write(num & 0xff);
 		this.write((num >> 8) & 0xff);
 	}
+
+	public reset() {
+		this.data = [];
+	}
 }

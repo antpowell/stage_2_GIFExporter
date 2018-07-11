@@ -1,4 +1,4 @@
-import { GIFExporter } from './gif.encoder';
+import { GIFExporter } from './gif.exporter';
 export class Game {
 	private _canvas: HTMLCanvasElement;
 	private _engine: BABYLON.Engine;
@@ -23,11 +23,7 @@ export class Game {
 		this._scene = new BABYLON.Scene(this._engine);
 
 		// Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
-		this._camera = new BABYLON.FreeCamera(
-			'camera1',
-			new BABYLON.Vector3(0, 5, -10),
-			this._scene
-		);
+		this._camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5, -10), this._scene);
 
 		// Target the camera to scene origin.
 		this._camera.setTarget(BABYLON.Vector3.Zero());
@@ -36,11 +32,7 @@ export class Game {
 		this._camera.attachControl(this._canvas, false);
 
 		// Create a basic light, aiming 0,1,0 - meaning, to the sky.
-		this._light = new BABYLON.HemisphericLight(
-			'light1',
-			new BABYLON.Vector3(0, 1, 0),
-			this._scene
-		);
+		this._light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), this._scene);
 
 		// Create a built-in "sphere" shape; with 16 segments and diameter of 2.
 		let sphere = BABYLON.MeshBuilder.CreateSphere(
@@ -88,9 +80,7 @@ export class Game {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-	const recordBtn: HTMLCanvasElement = document.getElementById(
-		'recordBtn'
-	) as HTMLCanvasElement;
+	const recordBtn: HTMLCanvasElement = document.getElementById('recordBtn') as HTMLCanvasElement;
 	const stopBtn = document.getElementById('recStopBtn');
 	// Setup GIF generator
 

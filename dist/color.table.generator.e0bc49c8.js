@@ -551,7 +551,59 @@ function NeuQuant(pixels, samplefac) {
 }
 
 // export default NeuQuant;
-},{}],37:[function(require,module,exports) {
+},{}],14:[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+    return mod && mod.__esModule ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var NeuQuant_1 = __importDefault(require("./js/NeuQuant"));
+var ColorTableGenerator = /** @class */function () {
+    function ColorTableGenerator(frame) {
+        this._colorTable = [];
+        this._GCT = [];
+        this._distribution = 51;
+        this._colorLookup = {};
+        this._neuQuant = new NeuQuant_1.default(frame, 20);
+        this._neuQuant.buildColormap();
+        this._colorTable = this._neuQuant.getColormap();
+    }
+    ColorTableGenerator.prototype.generate = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var pixel = '';
+            var count = 0;
+            _this._colorTable.forEach(function (value, index, array) {
+                pixel += _this.pad(value);
+                if ((index + 1) % 3 === 0) {
+                    _this._GCT.push(pixel);
+                    _this._colorLookup[pixel] = count;
+                    count++;
+                    pixel = '';
+                }
+                if (index === _this._colorTable.length - 1) resolve([_this._colorLookup, _this._GCT]);
+            });
+        });
+    };
+    ColorTableGenerator.prototype.lookupRGB = function (pixel) {
+        var R = parseInt(pixel.substr(0, 2), 16);
+        var G = parseInt(pixel.substr(2, 2), 16);
+        var B = parseInt(pixel.substr(4, 2), 16);
+        var pixelIndex = this._neuQuant.lookupRGB(R, G, B);
+        return pixelIndex;
+    };
+    ColorTableGenerator.prototype.pad = function (color) {
+        if (color < 16) {
+            return "0" + color.toString(16);
+        } else {
+            return color.toString(16);
+        }
+    };
+    return ColorTableGenerator;
+}();
+exports.ColorTableGenerator = ColorTableGenerator;
+},{"./js/NeuQuant":18}],37:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -721,5 +773,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[37,18], null)
-//# sourceMappingURL=/NeuQuant.51f0c7ed.map
+},{}]},{},[37,14], null)
+//# sourceMappingURL=/color.table.generator.e0bc49c8.map

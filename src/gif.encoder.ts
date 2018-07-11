@@ -1,7 +1,7 @@
 import { GIFGenerator } from './gif.generator';
 import { ColorTableGenerator } from './color.table.generator';
 
-export class GIFExporter {
+export class GIFExporter2 {
 	private _canvas: HTMLCanvasElement;
 	private _delay: number;
 	private _duration: number;
@@ -100,11 +100,17 @@ export class GIFExporter {
 
 			// })
 			imageDataCollection.forEach(async imgData => {
-				imgData = (await this.flipFrame(imgData)) as Uint8Array;
-				const [rgbData] = this.removeAlpha(imgData);
-				const indexedData = this.mapPixelIndex(rgbData as string[]);
-				// frameCollection.push(indexedData);
-				this._gifGenerator.generateFrame(indexedData);
+				const worker = new Worker('./process.frame.service.ts');
+				worker.postMessage({ message: 'processFrame', data: { frame: imgData, height: this._height, width: this._width } });
+				worker.onmessage = ({ data }) => {
+					console.log('data', data);
+					// console.log('checking', numericalData, stringData);
+				};
+				// imgData = (await this.flipFrame(imgData)) as Uint8Array;
+				// const [rgbData] = this.toRGBData(imgData);
+				// const indexedData = this.mapPixelIndex(rgbData as string[]);
+				// // frameCollection.push(indexedData);
+				// this._gifGenerator.generateFrame(indexedData);
 				if (--count === 0) resolve();
 			});
 		});
@@ -112,29 +118,16 @@ export class GIFExporter {
 
 	private flipFrame(frame: Uint8Array): Promise<Uint8Array> {
 		return new Promise((resolve, reject) => {
-			const split = (this._height / 2) | 0; /* | 0 faster version of Math.floor for positive numbers */
-			const bytesPerRow = this._width * 4;
-
-			let singleRow = new Uint8Array(this._width * 4);
-			for (let rowIndex = 0; rowIndex < split; ++rowIndex) {
-				let topOffset = rowIndex * bytesPerRow;
-				let bottomOffset = (this._height - rowIndex - 1) * bytesPerRow;
-
-				// make copy of a row on the top half
-				singleRow.set(frame.subarray(topOffset, topOffset + bytesPerRow));
-
-				// copy a row from the bottom half to the top
-				frame.copyWithin(topOffset, bottomOffset, bottomOffset + bytesPerRow);
-
-				// copy the copy of the top half row to the bottom half
-				frame.set(singleRow, bottomOffset);
-
-				if (rowIndex < split) resolve(frame);
-			}
+			const worker = new Worker('./process.frame.service.ts');
+			worker.postMessage({ message: 'processFrame', data: { frame, height: this._height, width: this._width } });
+			worker.onmessage = ({ data: { numericalData, stringData } }) => {
+				console.log(numericalData, stringData);
+				// resolve(stringData);
+			};
 		});
 	}
 
-	private removeAlpha(colorArray: Uint8ClampedArray): [string[], number[]] {
+	private toRGBData(colorArray: Uint8ClampedArray): [string[], number[]] {
 		let RGBPixelData: string[] = [];
 		let RGBNumerical: number[] = [];
 		for (let i = 0; i < colorArray.length; i += 4) {
@@ -145,7 +138,7 @@ export class GIFExporter {
 			RGBNumerical.push(colorArray[i + 1]);
 			RGBNumerical.push(colorArray[i + 2]);
 		}
-
+		console.log(RGBPixelData, RGBPixelData);
 		return [RGBPixelData, RGBNumerical];
 	}
 
@@ -170,11 +163,19 @@ export class GIFExporter {
 	}
 
 	private async getColorFrame(): Promise<number[]> {
+		let numericalRGBData: number[];
 		const pixels = await this.getWebGLPixels();
-		const img = (await this.flipFrame(pixels)) as Uint8Array;
-		const [, RBGData] = this.removeAlpha(img);
-
-		return RBGData;
+		const worker = new Worker('./process.frame.service.ts');
+		worker.postMessage({ message: 'processFrame', data: { frame: pixels, height: this._height, width: this._width } });
+		worker.onmessage = async ({
+			data: {
+				data: { numericalRGBData },
+			},
+		}) => {
+			// numericalRGBData = numericalRGBData;
+			[this._colorLookUpTable, this._GlobalColorTable] = await new ColorTableGenerator(numericalRGBData).generate();
+		};
+		return numericalRGBData;
 	}
 
 	private generateColorTable(): Promise<{}> {
@@ -209,6 +210,7 @@ export class GIFExporter {
 			const gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
 			const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
 			gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			console.log('pixels', pixels);
 			resolve(pixels);
 		});
 	}

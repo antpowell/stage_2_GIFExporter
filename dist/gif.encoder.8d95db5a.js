@@ -441,15 +441,15 @@ var encoded_image_1 = require("./encoded.image");
 var worker_service_1 = require("./worker.service");
 var LZW_1 = require("./LZW");
 var GIFGenerator = /** @class */function () {
-    function GIFGenerator(width, height, GCT) {
+    function GIFGenerator() {
         this.stream = new encoded_image_1.EncodedImage();
         this.frameCount = 0;
+        console.log("Generator now running...");
+    }
+    GIFGenerator.prototype.init = function (width, height, GCT) {
         this.width = width;
         this.height = height;
         this.GCT = GCT;
-        console.log("Generator now running...");
-    }
-    GIFGenerator.prototype.init = function () {
         this._webWorker = new worker_service_1.WorkerService();
         this.writeHeader();
         this.writeLogicalScreenDescriptor();
@@ -1255,20 +1255,22 @@ var GIFExporter = /** @class */function () {
                     // })
                     imageDataCollection.forEach(function (imgData) {
                         return __awaiter(_this, void 0, void 0, function () {
-                            var rgbData, indexedData;
+                            var worker;
                             return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        return [4 /*yield*/, this.flipFrame(imgData)];
-                                    case 1:
-                                        imgData = _a.sent();
-                                        rgbData = this.removeAlpha(imgData)[0];
-                                        indexedData = this.mapPixelIndex(rgbData);
-                                        // frameCollection.push(indexedData);
-                                        this._gifGenerator.generateFrame(indexedData);
-                                        if (--count === 0) resolve();
-                                        return [2 /*return*/];
-                                }
+                                worker = new Worker("/process.frame.service.feafa981.js");
+                                worker.postMessage({ message: 'processFrame', data: { frame: imgData, height: this._height, width: this._width } });
+                                worker.onmessage = function (_a) {
+                                    var data = _a.data;
+                                    console.log('data', data);
+                                    // console.log('checking', numericalData, stringData);
+                                };
+                                // imgData = (await this.flipFrame(imgData)) as Uint8Array;
+                                // const [rgbData] = this.toRGBData(imgData);
+                                // const indexedData = this.mapPixelIndex(rgbData as string[]);
+                                // // frameCollection.push(indexedData);
+                                // this._gifGenerator.generateFrame(indexedData);
+                                if (--count === 0) resolve();
+                                return [2 /*return*/];
                             });
                         });
                     });
@@ -1280,23 +1282,18 @@ var GIFExporter = /** @class */function () {
     GIFExporter.prototype.flipFrame = function (frame) {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var split = _this._height / 2 | 0; /* | 0 faster version of Math.floor for positive numbers */
-            var bytesPerRow = _this._width * 4;
-            var singleRow = new Uint8Array(_this._width * 4);
-            for (var rowIndex = 0; rowIndex < split; ++rowIndex) {
-                var topOffset = rowIndex * bytesPerRow;
-                var bottomOffset = (_this._height - rowIndex - 1) * bytesPerRow;
-                // make copy of a row on the top half
-                singleRow.set(frame.subarray(topOffset, topOffset + bytesPerRow));
-                // copy a row from the bottom half to the top
-                frame.copyWithin(topOffset, bottomOffset, bottomOffset + bytesPerRow);
-                // copy the copy of the top half row to the bottom half
-                frame.set(singleRow, bottomOffset);
-                if (rowIndex < split) resolve(frame);
-            }
+            var worker = new Worker("/process.frame.service.feafa981.js");
+            worker.postMessage({ message: 'processFrame', data: { frame: frame, height: _this._height, width: _this._width } });
+            worker.onmessage = function (_a) {
+                var _b = _a.data,
+                    numericalData = _b.numericalData,
+                    stringData = _b.stringData;
+                console.log(numericalData, stringData);
+                // resolve(stringData);
+            };
         });
     };
-    GIFExporter.prototype.removeAlpha = function (colorArray) {
+    GIFExporter.prototype.toRGBData = function (colorArray) {
         var RGBPixelData = [];
         var RGBNumerical = [];
         for (var i = 0; i < colorArray.length; i += 4) {
@@ -1306,6 +1303,7 @@ var GIFExporter = /** @class */function () {
             RGBNumerical.push(colorArray[i + 1]);
             RGBNumerical.push(colorArray[i + 2]);
         }
+        console.log(RGBPixelData, RGBPixelData);
         return [RGBPixelData, RGBNumerical];
     };
     GIFExporter.prototype.pad = function (color) {
@@ -1329,18 +1327,33 @@ var GIFExporter = /** @class */function () {
     };
     GIFExporter.prototype.getColorFrame = function () {
         return __awaiter(this, void 0, Promise, function () {
-            var pixels, img, _a, RBGData;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var numericalRGBData, pixels, worker;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         return [4 /*yield*/, this.getWebGLPixels()];
                     case 1:
-                        pixels = _b.sent();
-                        return [4 /*yield*/, this.flipFrame(pixels)];
-                    case 2:
-                        img = _b.sent();
-                        _a = this.removeAlpha(img), RBGData = _a[1];
-                        return [2 /*return*/, RBGData];
+                        pixels = _a.sent();
+                        worker = new Worker("/process.frame.service.feafa981.js");
+                        worker.postMessage({ message: 'processFrame', data: { frame: pixels, height: this._height, width: this._width } });
+                        worker.onmessage = function (_a) {
+                            var numericalRGBData = _a.data.data.numericalRGBData;
+                            return __awaiter(_this, void 0, void 0, function () {
+                                var _b;
+                                return __generator(this, function (_c) {
+                                    switch (_c.label) {
+                                        case 0:
+                                            return [4 /*yield*/, new color_table_generator_1.ColorTableGenerator(numericalRGBData).generate()];
+                                        case 1:
+                                            // numericalRGBData = numericalRGBData;
+                                            _b = _c.sent(), this._colorLookUpTable = _b[0], this._GlobalColorTable = _b[1];
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            });
+                        };
+                        return [2 /*return*/, numericalRGBData];
                 }
             });
         });
@@ -1389,13 +1402,14 @@ var GIFExporter = /** @class */function () {
             var gl = _this._canvas.getContext('webgl2') || _this._canvas.getContext('webgl');
             var pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
             gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            console.log('pixels', pixels);
             resolve(pixels);
         });
     };
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./gif.generator":15,"./color.table.generator":14,"./gif.generator.service.ts":56}],40:[function(require,module,exports) {
+},{"./gif.generator":15,"./color.table.generator":14,"./process.frame.service.ts":60,"./gif.generator.service.ts":56}],40:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1694,6 +1708,6 @@ module.exports = function loadJSBundle(bundle) {
   });
 };
 },{}],0:[function(require,module,exports) {
-var b=require(42);b.register("js",require(46));b.load([["lzw.service.d93058d8.js",37],["gif.generator.service.f06368d6.js",56]]).then(function(){require(16);});
+var b=require(42);b.register("js",require(46));b.load([["lzw.service.d93058d8.js",37],["process.frame.service.feafa981.js",60],["gif.generator.service.f06368d6.js",56]]).then(function(){require(16);});
 },{}]},{},[40,0], null)
 //# sourceMappingURL=/gif.encoder.8d95db5a.map

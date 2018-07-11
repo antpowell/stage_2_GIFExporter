@@ -137,33 +137,13 @@ var EncodedImage = /** @class */function () {
         this.write(num & 0xff);
         this.write(num >> 8 & 0xff);
     };
+    EncodedImage.prototype.reset = function () {
+        this.data = [];
+    };
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],33:[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var WorkerService = /** @class */function () {
-    function WorkerService() {}
-    WorkerService.prototype.LZW = function (data) {
-        return new Promise(function (resolve, reject) {
-            var worker = new Worker("/lzw.service.d93058d8.js");
-            worker.postMessage(data);
-            worker.onmessage = function (encodedData) {};
-        });
-    };
-    WorkerService.prototype.GIFGenerator = function (obj) {
-        return new Promise(function (resolve, reject) {
-            // // const worker = new Worker('./gif');
-            // worker.postMessage(obj);
-            // worker.onmessage = stream => resolve(stream);
-        });
-    };
-    return WorkerService;
-}();
-exports.WorkerService = WorkerService;
-},{"./lzw.service.ts":37}],12:[function(require,module,exports) {
+},{}],12:[function(require,module,exports) {
 "use strict";
 /**
  * This class handles LZW encoding
@@ -438,7 +418,6 @@ var __generator = this && this.__generator || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var encoded_image_1 = require("./encoded.image");
-var worker_service_1 = require("./worker.service");
 var LZW_1 = require("./LZW");
 var GIFGenerator = /** @class */function () {
     function GIFGenerator() {
@@ -447,10 +426,10 @@ var GIFGenerator = /** @class */function () {
         console.log("Generator now running...");
     }
     GIFGenerator.prototype.init = function (width, height, GCT) {
+        this.reset();
         this.width = width;
         this.height = height;
         this.GCT = GCT;
-        this._webWorker = new worker_service_1.WorkerService();
         this.writeHeader();
         this.writeLogicalScreenDescriptor();
         this.writeGlobalColorTable();
@@ -535,14 +514,14 @@ var GIFGenerator = /** @class */function () {
     GIFGenerator.prototype.writeLocalColorTable = function () {};
     GIFGenerator.prototype.writePlainTextExtension = function () {};
     GIFGenerator.prototype.writeCommentExtension = function () {};
-    GIFGenerator.prototype.writeLittleEndian = function (num) {
-        this.stream.write(num & 0xff);
-        this.stream.write(num >> 8 & 0xff);
+    GIFGenerator.prototype.reset = function () {
+        this.stream.reset();
+        this.frameCount = 0;
     };
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./encoded.image":13,"./worker.service":33,"./LZW":12}],40:[function(require,module,exports) {
+},{"./encoded.image":13,"./LZW":12}],37:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -571,7 +550,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '54900' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '50387' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -712,135 +691,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}],44:[function(require,module,exports) {
-var bundleURL = null;
-function getBundleURLCached() {
-  if (!bundleURL) {
-    bundleURL = getBundleURL();
-  }
-
-  return bundleURL;
-}
-
-function getBundleURL() {
-  // Attempt to find the URL of the current script and use that as the base URL
-  try {
-    throw new Error();
-  } catch (err) {
-    var matches = ('' + err.stack).match(/(https?|file|ftp):\/\/[^)\n]+/g);
-    if (matches) {
-      return getBaseURL(matches[0]);
-    }
-  }
-
-  return '/';
-}
-
-function getBaseURL(url) {
-  return ('' + url).replace(/^((?:https?|file|ftp):\/\/.+)\/[^/]+$/, '$1') + '/';
-}
-
-exports.getBundleURL = getBundleURLCached;
-exports.getBaseURL = getBaseURL;
-},{}],42:[function(require,module,exports) {
-var getBundleURL = require('./bundle-url').getBundleURL;
-
-function loadBundlesLazy(bundles) {
-  if (!Array.isArray(bundles)) {
-    bundles = [bundles];
-  }
-
-  var id = bundles[bundles.length - 1];
-
-  try {
-    return Promise.resolve(require(id));
-  } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-      return new LazyPromise(function (resolve, reject) {
-        loadBundles(bundles.slice(0, -1)).then(function () {
-          return require(id);
-        }).then(resolve, reject);
-      });
-    }
-
-    throw err;
-  }
-}
-
-function loadBundles(bundles) {
-  return Promise.all(bundles.map(loadBundle));
-}
-
-var bundleLoaders = {};
-function registerBundleLoader(type, loader) {
-  bundleLoaders[type] = loader;
-}
-
-module.exports = exports = loadBundlesLazy;
-exports.load = loadBundles;
-exports.register = registerBundleLoader;
-
-var bundles = {};
-function loadBundle(bundle) {
-  var id;
-  if (Array.isArray(bundle)) {
-    id = bundle[1];
-    bundle = bundle[0];
-  }
-
-  if (bundles[bundle]) {
-    return bundles[bundle];
-  }
-
-  var type = (bundle.substring(bundle.lastIndexOf('.') + 1, bundle.length) || bundle).toLowerCase();
-  var bundleLoader = bundleLoaders[type];
-  if (bundleLoader) {
-    return bundles[bundle] = bundleLoader(getBundleURL() + bundle).then(function (resolved) {
-      if (resolved) {
-        module.bundle.register(id, resolved);
-      }
-
-      return resolved;
-    });
-  }
-}
-
-function LazyPromise(executor) {
-  this.executor = executor;
-  this.promise = null;
-}
-
-LazyPromise.prototype.then = function (onSuccess, onError) {
-  if (this.promise === null) this.promise = new Promise(this.executor);
-  return this.promise.then(onSuccess, onError);
-};
-
-LazyPromise.prototype.catch = function (onError) {
-  if (this.promise === null) this.promise = new Promise(this.executor);
-  return this.promise.catch(onError);
-};
-},{"./bundle-url":44}],46:[function(require,module,exports) {
-module.exports = function loadJSBundle(bundle) {
-  return new Promise(function (resolve, reject) {
-    var script = document.createElement('script');
-    script.async = true;
-    script.type = 'text/javascript';
-    script.charset = 'utf-8';
-    script.src = bundle;
-    script.onerror = function (e) {
-      script.onerror = script.onload = null;
-      reject(e);
-    };
-
-    script.onload = function () {
-      script.onerror = script.onload = null;
-      resolve();
-    };
-
-    document.getElementsByTagName('head')[0].appendChild(script);
-  });
-};
-},{}],0:[function(require,module,exports) {
-var b=require(42);b.register("js",require(46));b.load([["lzw.service.d93058d8.js",37]]).then(function(){require(15);});
-},{}]},{},[40,0], null)
-//# sourceMappingURL=/gif.generator.acc3c5c7.map
+},{}]},{},[37,15], null)
+//# sourceMappingURL=/gif.generator.d100f2d5.map

@@ -1107,17 +1107,17 @@ var __generator = this && this.__generator || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var color_table_generator_1 = require("./color.table.generator");
 var gif_generator_1 = require("./gif.generator");
-var GIFExporter = /** @class */function () {
-    function GIFExporter(engine, options) {
+var GIFEncoder = /** @class */function () {
+    function GIFEncoder(engine, options) {
         this._gifGenerator = new gif_generator_1.GIFGenerator();
         var canvas = engine.getRenderingCanvas();
         this._width = engine.getRenderWidth();
         this._height = engine.getRenderHeight();
         this._gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-        this._delay = options.delay;
+        this._delay = options.dealy;
         this._duration = options.duration;
     }
-    GIFExporter.prototype.start = function () {
+    GIFEncoder.prototype.start = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
@@ -1140,51 +1140,21 @@ var GIFExporter = /** @class */function () {
                             return [4 /*yield*/, this.writeFrames(mappedFrames)];
                         case 5:
                             _a.sent();
-                            resolve(this._gifGenerator.getStream());
+                            resolve();
                             return [2 /*return*/];
                     }
                 });
             });
         });
     };
-    GIFExporter.prototype.stop = function () {};
-    GIFExporter.prototype.cancel = function () {};
-    GIFExporter.prototype.download = function (filename) {
-        if (filename === void 0) {
-            filename = 'canvasGIF.gif';
-        }
-        return __awaiter(this, void 0, void 0, function () {
-            var gif, url, download;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        return [4 /*yield*/, this.start()];
-                    case 1:
-                        gif = _a.sent();
-                        url = URL.createObjectURL(new Blob([new Uint8Array(gif)], {
-                            type: 'image/gif'
-                        }));
-                        download = document.createElement('a');
-                        document.body.appendChild(download);
-                        download.target = '_blank';
-                        download.setAttribute('target', '_blank');
-                        download.style.display = 'none';
-                        download.href = url;
-                        download.download = filename;
-                        download.click();
-                        URL.revokeObjectURL(url);
-                        download.parentElement.removeChild(download);
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
+    GIFEncoder.prototype.stop = function () {};
+    GIFEncoder.prototype.cancel = function () {};
     /**
      * Records Canvas - Create a collection of snapshots from the canvas of the Babylon Engine
      *
      * @returns {frameCollection} @type {Uint8Array}- collection of frames
      */
-    GIFExporter.prototype.recordCanvas = function () {
+    GIFEncoder.prototype.recordCanvas = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
@@ -1221,7 +1191,7 @@ var GIFExporter = /** @class */function () {
      *
      * @returns nothing
      */
-    GIFExporter.prototype.createColorTable = function () {
+    GIFEncoder.prototype.createColorTable = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
@@ -1254,7 +1224,7 @@ var GIFExporter = /** @class */function () {
      *
      * @return {Uint8Array} pixels - representing a snapshot from the canvas
      */
-    GIFExporter.prototype.getFrame = function () {
+    GIFEncoder.prototype.getFrame = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
@@ -1274,7 +1244,7 @@ var GIFExporter = /** @class */function () {
      * @param {Uint8Array} frame
      * @returns the object containing number[] RGB data and string[] RGB data
      */
-    GIFExporter.prototype.frameToRGBData = function (frame) {
+    GIFEncoder.prototype.frameToRGBData = function (frame) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var worker = new Worker("/process.frame.service.193a1b77.js");
@@ -1290,7 +1260,7 @@ var GIFExporter = /** @class */function () {
             };
         });
     };
-    GIFExporter.prototype.processFrames = function (frames) {
+    GIFEncoder.prototype.processFrames = function (frames) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var stringRGBFrames = [];
@@ -1312,13 +1282,13 @@ var GIFExporter = /** @class */function () {
             });
         });
     };
-    GIFExporter.prototype.writeColorTable = function (globalColorTable) {
+    GIFEncoder.prototype.writeColorTable = function (globalColorTable) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             _this._gifGenerator.init(_this._width, _this._height, globalColorTable);
         });
     };
-    GIFExporter.prototype.writeFrames = function (mappedFrames) {
+    GIFEncoder.prototype.writeFrames = function (mappedFrames) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             mappedFrames.forEach(function (frame) {
@@ -1337,7 +1307,7 @@ var GIFExporter = /** @class */function () {
             });
         });
     };
-    GIFExporter.prototype.mapPixelsToIndex = function (frames, colorLookup) {
+    GIFEncoder.prototype.mapPixelsToIndex = function (frames, colorLookup) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
@@ -1362,88 +1332,10 @@ var GIFExporter = /** @class */function () {
             });
         });
     };
-    return GIFExporter;
+    return GIFEncoder;
 }();
-exports.GIFExporter = GIFExporter;
-},{"./color.table.generator":14,"./gif.generator":15,"./process.frame.service.ts":[["process.frame.service.193a1b77.js",34],"process.frame.service.193a1b77.map",34]}],11:[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var gif_exporter_1 = require("./gif.exporter");
-var Game = /** @class */function () {
-    function Game(canvasElement) {
-        this._canvas = document.getElementById(canvasElement);
-        this._engine = new BABYLON.Engine(this._canvas, true, {
-            preserveDrawingBuffer: true
-        });
-        this._gifExporter = new gif_exporter_1.GIFExporter(this._engine, {
-            delay: 60,
-            duration: 2000
-        });
-    }
-    Game.prototype.createScene = function () {
-        // Create a basic BJS Scene object.
-        this._scene = new BABYLON.Scene(this._engine);
-        // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
-        this._camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5, -10), this._scene);
-        // Target the camera to scene origin.
-        this._camera.setTarget(BABYLON.Vector3.Zero());
-        // Attach the camera to the canvas.
-        this._camera.attachControl(this._canvas, false);
-        // Create a basic light, aiming 0,1,0 - meaning, to the sky.
-        this._light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), this._scene);
-        // Create a built-in "sphere" shape; with 16 segments and diameter of 2.
-        var sphere = BABYLON.MeshBuilder.CreateSphere('sphere', {
-            segments: 16,
-            diameter: 2
-        }, this._scene);
-        // Move the sphere upward 1/2 of its height.
-        sphere.position.y = 1;
-        // Create a built-in "ground" shape.
-        var ground = BABYLON.MeshBuilder.CreateGround('ground', {
-            width: 6,
-            height: 6,
-            subdivisions: 2
-        }, this._scene);
-    };
-    Game.prototype.doRender = function () {
-        var _this = this;
-        // Run the render loop.
-        this._engine.runRenderLoop(function () {
-            _this._scene.render();
-        });
-        // The canvas/window resize event handler.
-        window.addEventListener('resize', function () {
-            _this._engine.resize();
-        });
-    };
-    Game.prototype.downloadGIF = function () {
-        this._gifExporter.download();
-    };
-    Game.prototype.stopGIF = function () {
-        this._gifExporter.start();
-    };
-    return Game;
-}();
-exports.Game = Game;
-window.addEventListener('DOMContentLoaded', function () {
-    var recordBtn = document.getElementById('recordBtn');
-    var stopBtn = document.getElementById('recStopBtn');
-    // Setup GIF generator
-    // Create the game using the 'renderCanvas'.
-    var game = new Game('renderCanvas');
-    // Create the scene.
-    game.createScene();
-    // Start render loop.
-    game.doRender();
-    recordBtn.addEventListener('click', function () {
-        game.downloadGIF();
-    });
-    stopBtn.addEventListener('click', function () {
-        game.stopGIF();
-    });
-});
-},{"./gif.exporter":16}],37:[function(require,module,exports) {
+exports.GIFEncoder = GIFEncoder;
+},{"./color.table.generator":14,"./gif.generator":15,"./process.frame.service.ts":34}],37:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1472,7 +1364,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '50387' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '30168' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1613,5 +1505,135 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[37,11], null)
-//# sourceMappingURL=/game.bb8bdadb.map
+},{}],41:[function(require,module,exports) {
+var bundleURL = null;
+function getBundleURLCached() {
+  if (!bundleURL) {
+    bundleURL = getBundleURL();
+  }
+
+  return bundleURL;
+}
+
+function getBundleURL() {
+  // Attempt to find the URL of the current script and use that as the base URL
+  try {
+    throw new Error();
+  } catch (err) {
+    var matches = ('' + err.stack).match(/(https?|file|ftp):\/\/[^)\n]+/g);
+    if (matches) {
+      return getBaseURL(matches[0]);
+    }
+  }
+
+  return '/';
+}
+
+function getBaseURL(url) {
+  return ('' + url).replace(/^((?:https?|file|ftp):\/\/.+)\/[^/]+$/, '$1') + '/';
+}
+
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+},{}],39:[function(require,module,exports) {
+var getBundleURL = require('./bundle-url').getBundleURL;
+
+function loadBundlesLazy(bundles) {
+  if (!Array.isArray(bundles)) {
+    bundles = [bundles];
+  }
+
+  var id = bundles[bundles.length - 1];
+
+  try {
+    return Promise.resolve(require(id));
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      return new LazyPromise(function (resolve, reject) {
+        loadBundles(bundles.slice(0, -1)).then(function () {
+          return require(id);
+        }).then(resolve, reject);
+      });
+    }
+
+    throw err;
+  }
+}
+
+function loadBundles(bundles) {
+  return Promise.all(bundles.map(loadBundle));
+}
+
+var bundleLoaders = {};
+function registerBundleLoader(type, loader) {
+  bundleLoaders[type] = loader;
+}
+
+module.exports = exports = loadBundlesLazy;
+exports.load = loadBundles;
+exports.register = registerBundleLoader;
+
+var bundles = {};
+function loadBundle(bundle) {
+  var id;
+  if (Array.isArray(bundle)) {
+    id = bundle[1];
+    bundle = bundle[0];
+  }
+
+  if (bundles[bundle]) {
+    return bundles[bundle];
+  }
+
+  var type = (bundle.substring(bundle.lastIndexOf('.') + 1, bundle.length) || bundle).toLowerCase();
+  var bundleLoader = bundleLoaders[type];
+  if (bundleLoader) {
+    return bundles[bundle] = bundleLoader(getBundleURL() + bundle).then(function (resolved) {
+      if (resolved) {
+        module.bundle.register(id, resolved);
+      }
+
+      return resolved;
+    });
+  }
+}
+
+function LazyPromise(executor) {
+  this.executor = executor;
+  this.promise = null;
+}
+
+LazyPromise.prototype.then = function (onSuccess, onError) {
+  if (this.promise === null) this.promise = new Promise(this.executor);
+  return this.promise.then(onSuccess, onError);
+};
+
+LazyPromise.prototype.catch = function (onError) {
+  if (this.promise === null) this.promise = new Promise(this.executor);
+  return this.promise.catch(onError);
+};
+},{"./bundle-url":41}],43:[function(require,module,exports) {
+module.exports = function loadJSBundle(bundle) {
+  return new Promise(function (resolve, reject) {
+    var script = document.createElement('script');
+    script.async = true;
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = bundle;
+    script.onerror = function (e) {
+      script.onerror = script.onload = null;
+      reject(e);
+    };
+
+    script.onload = function () {
+      script.onerror = script.onload = null;
+      resolve();
+    };
+
+    document.getElementsByTagName('head')[0].appendChild(script);
+  });
+};
+},{}],0:[function(require,module,exports) {
+var b=require(39);b.register("js",require(43));b.load([["process.frame.service.193a1b77.js",34]]).then(function(){require(16);});
+},{}]},{},[37,0], null)
+//# sourceMappingURL=/gif.encoder.67fc3e33.map

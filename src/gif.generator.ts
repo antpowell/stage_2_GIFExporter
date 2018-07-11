@@ -1,5 +1,4 @@
 import { EncodedImage } from './encoded.image';
-import { WorkerService } from './worker.service';
 import { LZWEncoder } from './LZW';
 
 export class GIFGenerator {
@@ -9,17 +8,16 @@ export class GIFGenerator {
 	private frameIndexedPixels: number[];
 	private frameCount: number = 0;
 	private GCT: string[];
-	private _webWorker: WorkerService;
 
-	constructor(width: number, height: number, GCT: string[]) {
-		this.width = width;
-		this.height = height;
-		this.GCT = GCT;
+	constructor() {
 		console.log(`Generator now running...`);
 	}
 
-	public init(): void {
-		this._webWorker = new WorkerService();
+	public init(width: number, height: number, GCT: string[]): void {
+		this.reset();
+		this.width = width;
+		this.height = height;
+		this.GCT = GCT;
 		this.writeHeader();
 		this.writeLogicalScreenDescriptor();
 		this.writeGlobalColorTable();
@@ -78,9 +76,7 @@ export class GIFGenerator {
 		this.stream.writeUTF('NETSCAPE' + '2.0'); /* app id + auth code */
 		this.stream.write(3); /* sub-block size */
 		this.stream.write(1); /* loop sub-block id */
-		this.stream.writeLittleEndian(
-			0
-		); /* loop count (extra iterations, 0=repeat forever) */
+		this.stream.writeLittleEndian(0); /* loop count (extra iterations, 0=repeat forever) */
 		this.stream.write(0); /* Block Terminator */
 	}
 
@@ -104,23 +100,7 @@ export class GIFGenerator {
 	}
 
 	private async writeImageData(): Promise<void> {
-		// await this._webWorker.LZW({
-		// 	width: this.width,
-		// 	height: this.height,
-		// 	data: this.frameIndexedPixels,
-		// 	colorDepth: 8,
-		// 	gif: this.stream,
-		// });
-		// this._webWorker.LZWEncoder(this.width,
-		// 	this.height,
-		// 	this.frameIndexedPixels,
-		// 	8);
-		const encoder = new LZWEncoder(
-			this.width,
-			this.height,
-			this.frameIndexedPixels,
-			8
-		);
+		const encoder = new LZWEncoder(this.width, this.height, this.frameIndexedPixels, 8);
 		encoder.encode(this.stream);
 		console.log(`completed frame ${this.frameCount}`);
 	}
@@ -131,8 +111,8 @@ export class GIFGenerator {
 
 	private writeCommentExtension(): void {}
 
-	private writeLittleEndian(num: number): void {
-		this.stream.write(num & 0xff);
-		this.stream.write((num >> 8) & 0xff);
+	private reset() {
+		this.stream.reset();
+		this.frameCount = 0;
 	}
 }
