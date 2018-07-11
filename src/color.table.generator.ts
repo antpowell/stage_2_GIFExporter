@@ -8,7 +8,7 @@ export class ColorTableGenerator {
 		[index: string]: number;
 	} = {};
 
-	constructor(frame: number[]) {
+	constructor(frame: Uint8Array) {
 		this._neuQuant = new NeuQuant(frame, 20);
 		this._neuQuant.buildColormap();
 		this._colorTable = this._neuQuant.getColormap();
@@ -26,8 +26,7 @@ export class ColorTableGenerator {
 					count++;
 					pixel = '';
 				}
-				if (index === this._colorTable.length - 1)
-					resolve([this._colorLookup, this._GCT]);
+				if (index === this._colorTable.length - 1) resolve([this._colorLookup, this._GCT]);
 			});
 		});
 	}

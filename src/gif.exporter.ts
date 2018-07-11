@@ -1,8 +1,10 @@
 import { ColorTableGenerator } from './color.table.generator';
 import { GIFGenerator } from './gif.generator';
+import { flipFrame } from './process.frame.service';
 
 export class GIFExporter {
 	private _gifGenerator = new GIFGenerator();
+	private _canvas: HTMLCanvasElement;
 	private _gl: WebGLRenderingContext;
 	private _delay: number;
 	private _duration: number;
@@ -11,10 +13,10 @@ export class GIFExporter {
 	private _colorTableGen: ColorTableGenerator;
 
 	constructor(engine: BABYLON.Engine, options?: { delay?: number; duration?: number }) {
-		const canvas = engine.getRenderingCanvas();
+		this._canvas = engine.getRenderingCanvas();
 		this._width = engine.getRenderWidth();
 		this._height = engine.getRenderHeight();
-		this._gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+		this._gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
 		this._delay = options.delay;
 		this._duration = options.duration;
 	}
@@ -60,12 +62,14 @@ export class GIFExporter {
 	 */
 	private recordCanvas(): Promise<Uint8Array[]> {
 		return new Promise(async (resolve, reject) => {
+			console.log('record canvas');
 			const frameCollection: Uint8Array[] = [];
 			let intervalRef = setInterval(async () => {
 				frameCollection.push(await this.getFrame());
 			}, this._delay);
 			setTimeout(() => {
 				clearInterval(intervalRef);
+				console.log(frameCollection);
 				resolve(frameCollection);
 			}, this._duration);
 		});
@@ -94,8 +98,9 @@ export class GIFExporter {
 	 */
 	private getFrame(): Promise<Uint8Array> {
 		return new Promise(async (resolve, reject) => {
-			const pixels = new Uint8Array(this._width * this._height * 4);
-			this._gl.readPixels(0, 0, this._width, this._height, this._gl.RGBA, this._gl.UNSIGNED_BYTE, pixels);
+			const gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
+			let pixels = new Uint8Array(this._width * this._height * 4);
+			gl.readPixels(0, 0, this._width, this._height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 			resolve(pixels);
 		});
 	}
@@ -106,13 +111,15 @@ export class GIFExporter {
 	 * @param {Uint8Array} frame
 	 * @returns the object containing number[] RGB data and string[] RGB data
 	 */
-	private frameToRGBData(frame: Uint8Array): Promise<{ numericalRGBData: number[]; stringRGBData: string[] }> {
-		return new Promise((resolve, reject) => {
-			const worker = new Worker('./process.frame.service.ts');
-			worker.postMessage({ message: 'processFrame', data: { frame, height: this._height, width: this._width } });
-			worker.onmessage = async ({ data: { data } }) => {
-				resolve(data);
-			};
+	private frameToRGBData(frame: Uint8Array): Promise<{ numericalRGBData: Uint8Array; stringRGBData: string[] }> {
+		return new Promise(async (resolve, reject) => {
+			// const worker = new Worker('./process.frame.service.ts');
+			// worker.postMessage({ message: 'processFrame', data: { frame, height: this._height, width: this._width } });
+			// worker.onmessage = async ({ data: { data } }) => {
+			// 	resolve(data);
+			// };
+			const { numericalRGBData, stringRGBData } = await flipFrame(frame, this._width, this._height);
+			resolve({ numericalRGBData, stringRGBData });
 		});
 	}
 
@@ -130,6 +137,7 @@ export class GIFExporter {
 	private writeColorTable(globalColorTable: string[]) {
 		return new Promise((resolve, reject) => {
 			this._gifGenerator.init(this._width, this._height, globalColorTable);
+			resolve();
 		});
 	}
 
