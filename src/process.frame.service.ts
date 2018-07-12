@@ -19,7 +19,6 @@ export function flipFrames(frames: Uint8Array[], width: number, height: number) 
 		for (let rowNum = 0; rowNum < mid; ++rowNum) {
 			let topPointer = rowNum * rowLen;
 			let bottomPointer = (height - rowNum - 1) * rowLen;
-			if (frame === undefined) return;
 			flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
 			frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
 			frame.set(flipRow, bottomPointer);

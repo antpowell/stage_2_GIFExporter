@@ -27,10 +27,14 @@ export class GIFExporter {
 			this.init();
 			const colorLookup = await this.createColorTable();
 			const frames: Uint8Array[] = await this.recordCanvas();
+			console.log('timeout done');
+
 			const {
 				numericalRGBFrames: [numericalRGBData],
 				stringRGBFrames,
 			} = await this.processFrames(frames);
+			console.log('process done');
+
 			const mappedFrames = await this.mapPixelsToIndex(stringRGBFrames, colorLookup);
 			await this.writeFrames(mappedFrames);
 
@@ -84,6 +88,8 @@ export class GIFExporter {
 			}, this._delay);
 			setTimeout(() => {
 				clearInterval(intervalRef);
+				console.log('timeout');
+
 				resolve(frameCollection);
 			}, this._duration);
 		});
@@ -129,19 +135,19 @@ export class GIFExporter {
 			/**
 			 * Uncomment below to process frames on worker thread
 			 */
-			/* const worker = new Worker('./process.frame.service.ts');
+			const worker = new Worker('./process.frame.service.ts');
 			this._message = { job: 'flipFrames', params: { frames, width: this._width, height: this._height } };
 
 			worker.postMessage(this._message);
 
 			worker.onmessage = ({ data: { numericalRGBFrames, stringRGBFrames } }) => {
 				resolve({ numericalRGBFrames, stringRGBFrames });
-			}; */
+			};
 
 			/**
 			 * Uncommnet below to process frames on main thread
 			 */
-			resolve(await flipFrames(frames, this._width, this._height));
+			// resolve(await flipFrames(frames, this._width, this._height));
 		});
 	}
 

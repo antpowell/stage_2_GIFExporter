@@ -130,7 +130,6 @@ function flipFrames(frames, width, height) {
         for (var rowNum = 0; rowNum < mid; ++rowNum) {
             var topPointer = rowNum * rowLen;
             var bottomPointer = (height - rowNum - 1) * rowLen;
-            if (frame === undefined) return;
             flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
             frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
             frame.set(flipRow, bottomPointer);
