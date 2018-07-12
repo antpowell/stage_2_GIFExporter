@@ -1,27 +1,46 @@
 import { GIFGenerator } from './gif.generator';
 
-onmessage = ({ data: { message, data } }) => {
-	switch (message) {
-		case 'init':
-			init(data);
-			break;
-		case 'add frames':
-			addFrames(data);
-			break;
-		default:
-			throw new Error('invalid message to GIF worker');
-			break;
-	}
-};
+const gifGenerator: GIFGenerator = new GIFGenerator();
 
-function init({ weight, height, GCT }: { weight: number; height: number; GCT: string[] }): void {
-	const gifGenerator = new GIFGenerator(weight, height, GCT);
-	gifGenerator.init();
+addEventListener('message', ev => {
+	console.log(ev.data);
+});
+addEventListener('message', workHandler);
+
+function init(width: number, height: number, GCT: string[]): void {
+	console.log('initilizing');
+
+	gifGenerator.init(width, height, GCT);
 	postMessage('init complete', 'self');
 }
 
-function addFrames({ frames, gifInstance }: { frames: number[][]; gifInstance: GIFGenerator }): void {
-	frames.forEach(async frame => {
-		await gifInstance.generateFrame(frame);
+function addFrames({ frames }: { frames: number[][] }): void {
+	console.log('stitching frames');
+
+	frames.forEach(frame => {
+		gifGenerator.generateFrame(frame);
 	});
+}
+
+function getStream() {
+	console.log('getting data');
+
+	postMessage(gifGenerator.getStream());
+}
+
+function workHandler({ data }: { data: any }) {
+	console.log(data);
+	switch (data.job) {
+		case 'init':
+			const { width, height, globalColorTable } = data.params;
+			init(width, height, globalColorTable);
+			break;
+		case 'generateFrame':
+			const { frames } = data.params;
+			addFrames(frames);
+			break;
+		case 'getStream':
+			getStream();
+			break;
+	}
 }

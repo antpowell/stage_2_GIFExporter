@@ -1,17 +1,15 @@
-// onmessage = ({
-// 	data: {
-// 		message,
-// 		data: { frame, width, height },
-// 	},
-// }) => {
-// 	switch (message) {
-// 		case 'processFrame':
-// 			flipFrame(frame, width, height);
-// 			break;
-// 		default:
-// 			throw new Error('invalid message to frame processer worker');
-// 	}
-// };
+const ctx: Worker = self as any;
+addEventListener('message', async ({ data: { job, params } }) => {
+	switch (job) {
+		case 'flipFrame':
+			console.log(`recieved request to ${job}...💫`);
+			const { frame, width, height } = params;
+			postMessage(await flipFrame(frame, width, height));
+			break;
+	}
+});
+
+onmessage = routeCall;
 
 export function flipFrame(
 	frame: Uint8Array,
@@ -26,12 +24,12 @@ export function flipFrame(
 		for (let rowNum = 0; rowNum < mid; ++rowNum) {
 			let topPointer = rowNum * rowLen;
 			let bottomPointer = (height - rowNum - 1) * rowLen;
-
+			if (frame === undefined) reject();
 			flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
 			frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
 			frame.set(flipRow, bottomPointer);
 		}
-		resolve(await toRGBData(frame));
+		resolve(toRGBData(frame));
 	});
 }
 
@@ -44,9 +42,6 @@ export function flipFrame(
  * @return { rgbData:number[], rgbData: string[]}
  */
 function toRGBData(frame: Uint8Array): Promise<{ numericalRGBData: Uint8Array; stringRGBData: string[] }> {
-	//create pixels from frame
-	//remove alpha
-	//transform pixels into string formated version
 	return new Promise((resolve, reject) => {
 		const numericalRGBData = frame.filter((pixel: number, index: number) => (index + 1) % 4 !== 0);
 		const stringRGBData: string[] = [];
@@ -58,8 +53,8 @@ function toRGBData(frame: Uint8Array): Promise<{ numericalRGBData: Uint8Array; s
 				pixel = '';
 			}
 		});
-		// postMessage({ message: 'processFrame complete', data: { numericalRGBData, stringRGBData } });
-		resolve({ numericalRGBData, stringRGBData });
+		ctx.postMessage({ message: 'processFrame complete', data: { numericalRGBData, stringRGBData } });
+		// resolve({ numericalRGBData, stringRGBData });
 	});
 }
 
@@ -68,5 +63,36 @@ function pad(color: number): string {
 		return `0${color.toString(16)}`;
 	} else {
 		return color.toString(16);
+	}
+}
+
+function finished(numericalRGBFrames: Uint8Array[], stringRGBFrames: string[][]) {
+	ctx.postMessage({ message: 'processFrame complete', data: { numericalRGBFrames, stringRGBFrames } });
+}
+
+async function routeCall({
+	data: { job, params },
+}: {
+	data: { job: string; params: { frames: Uint8Array[]; width: number; height: number } };
+}) {
+	switch (job) {
+		case 'flipFrame':
+			console.log(`recieved request to ${job}...💫`);
+			const { frames, width, height } = params;
+			if (frames === undefined) break;
+
+			const numericalRGBFrames: Uint8Array[] = [];
+			const stringRGBFrames: string[][] = [];
+			console.log(frames);
+			frames.forEach(async frame => {
+				if (frame === undefined) {
+				} else {
+					const { numericalRGBData, stringRGBData } = await flipFrame(frame, width, height);
+					numericalRGBFrames.push(numericalRGBData);
+					stringRGBFrames.push(stringRGBData);
+				}
+			});
+			finished(numericalRGBFrames, stringRGBFrames);
+			break;
 	}
 }

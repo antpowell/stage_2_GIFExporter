@@ -103,36 +103,146 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({60:[function(require,module,exports) {
-onmessage = function onmessage(_a) {
-    var _b = _a.data,
-        message = _b.message,
-        data = _b.data;
-    switch (message) {
-        case 'processFrame':
-            flipFrames(data);
-            break;
-        default:
-            throw new Error('invalid message to GIF worker');
-            break;
+})({35:[function(require,module,exports) {
+"use strict";
+
+var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) {
+            try {
+                step(generator.next(value));
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function rejected(value) {
+            try {
+                step(generator["throw"](value));
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function step(result) {
+            result.done ? resolve(result.value) : new P(function (resolve) {
+                resolve(result.value);
+            }).then(fulfilled, rejected);
+        }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = this && this.__generator || function (thisArg, body) {
+    var _ = { label: 0, sent: function sent() {
+            if (t[0] & 1) throw t[1];return t[1];
+        }, trys: [], ops: [] },
+        f,
+        y,
+        t,
+        g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+        return this;
+    }), g;
+    function verb(n) {
+        return function (v) {
+            return step([n, v]);
+        };
+    }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) {
+            try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0:case 1:
+                        t = op;break;
+                    case 4:
+                        _.label++;return { value: op[1], done: false };
+                    case 5:
+                        _.label++;y = op[1];op = [0];continue;
+                    case 7:
+                        op = _.ops.pop();_.trys.pop();continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+                            _ = 0;continue;
+                        }
+                        if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+                            _.label = op[1];break;
+                        }
+                        if (op[0] === 6 && _.label < t[1]) {
+                            _.label = t[1];t = op;break;
+                        }
+                        if (t && _.label < t[2]) {
+                            _.label = t[2];_.ops.push(op);break;
+                        }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop();continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) {
+                op = [6, e];y = 0;
+            } finally {
+                f = t = 0;
+            }
+        }if (op[0] & 5) throw op[1];return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-function flipFrames(_a) {
-    var frame = _a.frame,
-        width = _a.width,
-        height = _a.height;
-    var mid = height / 2 | 0;
-    var rowLen = width * 4;
-    var flipRow = new Uint8Array(rowLen);
-    for (var rowNum = 0; rowNum < mid; ++rowNum) {
-        var topPointer = rowNum * rowLen;
-        var bottomPointer = (height - rowNum - 1) * rowLen;
-        flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
-        frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
-        frame.set(flipRow, bottomPointer);
-    }
-    toRGBData({ frame: frame, width: width, height: height });
+var _this = this;
+Object.defineProperty(exports, "__esModule", { value: true });
+var ctx = self;
+addEventListener('message', function (_a) {
+    var _b = _a.data,
+        job = _b.job,
+        params = _b.params;
+    return __awaiter(_this, void 0, void 0, function () {
+        var _c, frame, width, height, _d;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
+                case 0:
+                    _c = job;
+                    switch (_c) {
+                        case 'flipFrame':
+                            return [3 /*break*/, 1];
+                    }
+                    return [3 /*break*/, 3];
+                case 1:
+                    console.log("recieved request to " + job + "...\uD83D\uDCAB");
+                    frame = params.frame, width = params.width, height = params.height;
+                    _d = postMessage;
+                    return [4 /*yield*/, flipFrame(frame, width, height)];
+                case 2:
+                    _d.apply(void 0, [_e.sent()]);
+                    return [3 /*break*/, 3];
+                case 3:
+                    return [2 /*return*/];
+            }
+        });
+    });
+});
+onmessage = routeCall;
+function flipFrame(frame, width, height) {
+    var _this = this;
+    return new Promise(function (resolve, reject) {
+        return __awaiter(_this, void 0, void 0, function () {
+            var mid, rowLen, flipRow, rowNum, topPointer, bottomPointer;
+            return __generator(this, function (_a) {
+                mid = height / 2 | 0;
+                rowLen = width * 4;
+                flipRow = new Uint8Array(rowLen);
+                for (rowNum = 0; rowNum < mid; ++rowNum) {
+                    topPointer = rowNum * rowLen;
+                    bottomPointer = (height - rowNum - 1) * rowLen;
+                    if (frame === undefined) reject();
+                    flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
+                    frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
+                    frame.set(flipRow, bottomPointer);
+                }
+                resolve(toRGBData(frame));
+                return [2 /*return*/];
+            });
+        });
+    });
 }
+exports.flipFrame = flipFrame;
 /**
  * Removes Alpha values from frame and transform data into number[] and string[]
  *
@@ -141,27 +251,23 @@ function flipFrames(_a) {
  * @param hieght
  * @return { rgbData:number[], rgbData: string[]}
  */
-function toRGBData(_a) {
-    //create pixels from frame
-    //remove alpha
-    //transform pixels into string formated version
-    var frame = _a.frame,
-        height = _a.height,
-        width = _a.width;
-    var numericalRGBData = frame.filter(function (pixel, index) {
-        return (index + 1) % 4 !== 0;
+function toRGBData(frame) {
+    return new Promise(function (resolve, reject) {
+        var numericalRGBData = frame.filter(function (pixel, index) {
+            return (index + 1) % 4 !== 0;
+        });
+        var stringRGBData = [];
+        var pixel = '';
+        numericalRGBData.forEach(function (color, index) {
+            pixel += pad(color);
+            if ((index + 1) % 3 === 0) {
+                stringRGBData.push(pixel);
+                pixel = '';
+            }
+        });
+        ctx.postMessage({ message: 'processFrame complete', data: { numericalRGBData: numericalRGBData, stringRGBData: stringRGBData } });
+        // resolve({ numericalRGBData, stringRGBData });
     });
-    var stringRGBData = [];
-    var pixel = '';
-    numericalRGBData.forEach(function (color, index) {
-        pixel += pad(color);
-        if ((index + 1) % 3 === 0) {
-            stringRGBData.push(pixel);
-            pixel = '';
-        }
-    });
-    console.log('stringRGBData', stringRGBData);
-    postMessage({ message: 'processFrame complete', data: { numericalRGBData: numericalRGBData, stringRGBData: stringRGBData } });
 }
 function pad(color) {
     if (color < 16) {
@@ -170,7 +276,54 @@ function pad(color) {
         return color.toString(16);
     }
 }
-},{}],40:[function(require,module,exports) {
+function finished(numericalRGBFrames, stringRGBFrames) {
+    ctx.postMessage({ message: 'processFrame complete', data: { numericalRGBFrames: numericalRGBFrames, stringRGBFrames: stringRGBFrames } });
+}
+function routeCall(_a) {
+    var _b = _a.data,
+        job = _b.job,
+        params = _b.params;
+    return __awaiter(this, void 0, void 0, function () {
+        var frames, width_1, height_1, numericalRGBFrames_1, stringRGBFrames_1;
+        var _this = this;
+        return __generator(this, function (_c) {
+            switch (job) {
+                case 'flipFrame':
+                    console.log("recieved request to " + job + "...\uD83D\uDCAB");
+                    frames = params.frames, width_1 = params.width, height_1 = params.height;
+                    if (frames === undefined) break;
+                    numericalRGBFrames_1 = [];
+                    stringRGBFrames_1 = [];
+                    console.log(frames);
+                    frames.forEach(function (frame) {
+                        return __awaiter(_this, void 0, void 0, function () {
+                            var _a, numericalRGBData, stringRGBData;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0:
+                                        if (!(frame === undefined)) return [3 /*break*/, 1];
+                                        return [3 /*break*/, 3];
+                                    case 1:
+                                        return [4 /*yield*/, flipFrame(frame, width_1, height_1)];
+                                    case 2:
+                                        _a = _b.sent(), numericalRGBData = _a.numericalRGBData, stringRGBData = _a.stringRGBData;
+                                        numericalRGBFrames_1.push(numericalRGBData);
+                                        stringRGBFrames_1.push(stringRGBData);
+                                        _b.label = 3;
+                                    case 3:
+                                        return [2 /*return*/];
+                                }
+                            });
+                        });
+                    });
+                    finished(numericalRGBFrames_1, stringRGBFrames_1);
+                    break;
+            }
+            return [2 /*return*/];
+        });
+    });
+}
+},{}],38:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -199,7 +352,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '54900' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '60628' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -340,5 +493,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[40,60], null)
+},{}]},{},[38,35], null)
 //# sourceMappingURL=/process.frame.service.feafa981.map

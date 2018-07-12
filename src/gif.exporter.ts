@@ -1,6 +1,6 @@
 import { ColorTableGenerator } from './color.table.generator';
 import { GIFGenerator } from './gif.generator';
-import { flipFrame } from './process.frame.service';
+import { flipFrames } from './process.frame';
 
 export class GIFExporter {
 	private _gifGenerator = new GIFGenerator();
@@ -11,32 +11,43 @@ export class GIFExporter {
 	private _width: number;
 	private _height: number;
 	private _colorTableGen: ColorTableGenerator;
+	private _gifWorker: Worker;
+	private _message: { job: string; params: {} };
 
 	constructor(engine: BABYLON.Engine, options?: { delay?: number; duration?: number }) {
 		this._canvas = engine.getRenderingCanvas();
-		this._width = engine.getRenderWidth();
-		this._height = engine.getRenderHeight();
-		this._gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
 		this._delay = options.delay;
 		this._duration = options.duration;
+
+		// this._gifWorker = new Worker('./gif.generator.service.ts');
 	}
 
 	public start(): Promise<number[]> {
 		return new Promise(async (resolve, reject) => {
+			this.init();
 			const colorLookup = await this.createColorTable();
 			const frames: Uint8Array[] = await this.recordCanvas();
-			const stringRGBFrames: string[][] = await this.processFrames(frames);
+			const {
+				numericalRGBFrames: [numericalRGBData],
+				stringRGBFrames,
+			} = await this.processFrames(frames);
 			const mappedFrames = await this.mapPixelsToIndex(stringRGBFrames, colorLookup);
 			await this.writeFrames(mappedFrames);
+			// this._message = { job: 'getStream', params: {} };
+
+			// this._gifWorker.postMessage(this._message);
+			// this._gifWorker.onmessage = ({ data }) => {
+			// 	resolve(data);
+			// };
 			resolve(this._gifGenerator.getStream());
 		});
 	}
 
-	public stop() {}
+	public stop(): void {}
 
-	public cancel() {}
+	public cancel(): void {}
 
-	public async download(filename = 'canvasGIF.gif') {
+	public async download(filename = 'canvasGIF.gif'): Promise<void> {
 		const gif = await this.start();
 		const url = URL.createObjectURL(
 			new Blob([new Uint8Array(gif)], {
@@ -69,7 +80,6 @@ export class GIFExporter {
 			}, this._delay);
 			setTimeout(() => {
 				clearInterval(intervalRef);
-				console.log(frameCollection);
 				resolve(frameCollection);
 			}, this._duration);
 		});
@@ -83,7 +93,12 @@ export class GIFExporter {
 	private createColorTable(): Promise<{ [index: string]: number }> {
 		return new Promise(async (resolve, reject) => {
 			const frame = await this.getFrame();
-			const { numericalRGBData, stringRGBData } = await this.frameToRGBData(frame);
+			const frames: Uint8Array[] = [];
+			frames.push(frame);
+			const {
+				numericalRGBFrames: [numericalRGBData],
+				stringRGBFrames,
+			} = await this.processFrames(frames);
 			this._colorTableGen = new ColorTableGenerator(numericalRGBData);
 			const [colorLookup, colorTable] = await this._colorTableGen.generate();
 			await this.writeColorTable(colorTable);
@@ -114,35 +129,55 @@ export class GIFExporter {
 	private frameToRGBData(frame: Uint8Array): Promise<{ numericalRGBData: Uint8Array; stringRGBData: string[] }> {
 		return new Promise(async (resolve, reject) => {
 			// const worker = new Worker('./process.frame.service.ts');
-			// worker.postMessage({ message: 'processFrame', data: { frame, height: this._height, width: this._width } });
-			// worker.onmessage = async ({ data: { data } }) => {
-			// 	resolve(data);
+			// const frames: Uint8Array[] = [];
+			// frames.push(frame);
+			// worker.postMessage({ job: 'flipFrame', params: { frames, height: this._height, width: this._width } });
+			// worker.onmessage = ({
+			// 	data: {
+			// 		message,
+			// 		data: { numericalRGBData, stringRGBData },
+			// 	},
+			// }) => {
+			// 	resolve({ numericalRGBData, stringRGBData });
 			// };
-			const { numericalRGBData, stringRGBData } = await flipFrame(frame, this._width, this._height);
-			resolve({ numericalRGBData, stringRGBData });
+			// const { numericalRGBData, stringRGBData } = await flipFrame(frame, this._width, this._height);
+			// resolve({ numericalRGBData, stringRGBData });
 		});
 	}
 
-	private processFrames(frames: Uint8Array[]): Promise<string[][]> {
-		return new Promise((resolve, reject) => {
-			const stringRGBFrames: string[][] = [];
-			frames.forEach(async (frame, index, array) => {
-				const { numericalRGBData, stringRGBData } = await this.frameToRGBData(frame);
-				stringRGBFrames.push(stringRGBData);
-				if (index + 1 === array.length) resolve(stringRGBFrames);
-			});
+	private processFrames(frames: Uint8Array[]): Promise<{ numericalRGBFrames: Uint8Array[]; stringRGBFrames: string[][] }> {
+		return new Promise(async (resolve, reject) => {
+			// const stringRGBFrames: string[][] = [];
+
+			// const worker = new Worker('./process.frame.service.ts');
+			// worker.postMessage({ job: 'flipFrame', params: { frames, height: this._height, width: this._width } });
+			// worker.onmessage = ({
+			// 	data: {
+			// 		message,
+			// 		data: { numericalRGBFrames, stringRGBFrames },
+			// 	},
+			// }) => {
+			// 	resolve({ numericalRGBFrames, stringRGBFrames });
+			// };
+
+			resolve(await flipFrames(frames, this._width, this._height));
 		});
 	}
 
-	private writeColorTable(globalColorTable: string[]) {
+	private writeColorTable(globalColorTable: string[]): Promise<void> {
 		return new Promise((resolve, reject) => {
+			this._message = { job: 'init', params: { width: this._width, height: this._height, globalColorTable } };
+			// this._gifWorker.postMessage(this._message);
 			this._gifGenerator.init(this._width, this._height, globalColorTable);
 			resolve();
 		});
 	}
 
-	private writeFrames(mappedFrames: number[][]) {
+	private writeFrames(mappedFrames: number[][]): Promise<void> {
 		return new Promise((resolve, reject) => {
+			this._message = { job: 'generateFrame', params: { frames: mappedFrames } };
+			// this._gifWorker.postMessage(this._message);
+			// resolve();
 			mappedFrames.forEach(async frame => {
 				await this._gifGenerator.generateFrame(frame);
 				resolve();
@@ -152,9 +187,9 @@ export class GIFExporter {
 
 	private mapPixelsToIndex(frames: string[][], colorLookup: { [index: string]: number }): Promise<number[][]> {
 		return new Promise(async (resolve, reject) => {
-			const indexedPixels: number[] = [];
 			const indexedFrames: number[][] = [];
 			frames.forEach(frame => {
+				const indexedPixels: number[] = [];
 				frame.forEach(pixel => {
 					if (colorLookup[pixel]) {
 						indexedPixels.push(colorLookup[pixel]);
@@ -166,5 +201,11 @@ export class GIFExporter {
 			});
 			resolve(indexedFrames);
 		});
+	}
+
+	private init() {
+		this._width = this._canvas.width;
+		this._height = this._canvas.height;
+		this._gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
 	}
 }

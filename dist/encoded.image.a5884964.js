@@ -137,10 +137,13 @@ var EncodedImage = /** @class */function () {
         this.write(num & 0xff);
         this.write(num >> 8 & 0xff);
     };
+    EncodedImage.prototype.reset = function () {
+        this.data = [];
+    };
     return EncodedImage;
 }();
 exports.EncodedImage = EncodedImage;
-},{}],40:[function(require,module,exports) {
+},{}],38:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -169,7 +172,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '54900' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '60628' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -310,5 +313,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[40,13], null)
+},{}]},{},[38,13], null)
 //# sourceMappingURL=/encoded.image.a5884964.map
