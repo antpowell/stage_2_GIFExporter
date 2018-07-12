@@ -33,14 +33,6 @@ export function flipFrame(
 	});
 }
 
-/**
- * Removes Alpha values from frame and transform data into number[] and string[]
- *
- * @param frame
- * @param width
- * @param hieght
- * @return { rgbData:number[], rgbData: string[]}
- */
 function toRGBData(frame: Uint8Array): Promise<{ numericalRGBData: Uint8Array; stringRGBData: string[] }> {
 	return new Promise((resolve, reject) => {
 		const numericalRGBData = frame.filter((pixel: number, index: number) => (index + 1) % 4 !== 0);
