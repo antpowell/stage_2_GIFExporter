@@ -1,3 +1,29 @@
+import { LZWEncoder } from './LZW';
+import { EncodedImage } from './encoded.image';
+
+const ctx: Worker = self as any;
+
+addEventListener('message', callHandler);
+
+function callHandler({ data }: { data: MessageEvent }) {
+	const { job, params } = data.data;
+	switch (job) {
+		case 'encode':
+			const {
+				width,
+				height,
+				frameIndexedPixels,
+				stream,
+			}: { width: number; height: number; frameIndexedPixels: number[]; colorDepth: number; stream: EncodedImage } = params;
+			encode(width, height, frameIndexedPixels, 8, stream);
+	}
+}
+
+function encode(width: number, height: number, frameIndexedPixels: number[], colorDepth: number, stream: EncodedImage) {
+	const encoder = new LZWEncoder(width, height, frameIndexedPixels, colorDepth);
+	encoder.encode(stream);
+}
+
 // /**
 //  * This class handles LZW encoding
 //  * Adapted from Jef Poskanzer's Java port by way of J. M. G. Elliott.

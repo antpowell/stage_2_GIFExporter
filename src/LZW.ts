@@ -108,12 +108,7 @@ export class LZWEncoder {
 	// Define the storage for the packet accumulator
 	private _accum: number[] = [];
 
-	constructor(
-		width: number,
-		height: number,
-		pixels: number[],
-		colorDepth: number
-	) {
+	constructor(width: number, height: number, pixels: number[], colorDepth: number) {
 		this._imgW = width;
 		this._imgH = height;
 		this._pixels = pixels;
@@ -138,7 +133,7 @@ export class LZWEncoder {
 	}
 
 	// reset code table
-	public cl_hash(hsize: number): void {
+	private cl_hash(hsize: number): void {
 		for (let i = 0; i < hsize; ++i) this._htab[i] = -1;
 	}
 

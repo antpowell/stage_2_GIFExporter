@@ -14,7 +14,6 @@ export function flipFrames(
 			for (let rowNum = 0; rowNum < mid; ++rowNum) {
 				let topPointer = rowNum * rowLen;
 				let bottomPointer = (height - rowNum - 1) * rowLen;
-				if (frame === undefined) reject();
 				flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
 				frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
 				frame.set(flipRow, bottomPointer);
