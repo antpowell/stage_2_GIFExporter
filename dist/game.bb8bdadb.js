@@ -1021,170 +1021,7 @@ var GIFGenerator = /** @class */function () {
     return GIFGenerator;
 }();
 exports.GIFGenerator = GIFGenerator;
-},{"./encoded.image":13,"./LZW":12}],34:[function(require,module,exports) {
-"use strict";
-// onmessage = ({
-// 	data: {
-// 		message,
-// 		data: { frame, width, height },
-// 	},
-// }) => {
-// 	switch (message) {
-// 		case 'processFrame':
-// 			flipFrame(frame, width, height);
-// 			break;
-// 		default:
-// 			throw new Error('invalid message to frame processer worker');
-// 	}
-// };
-
-var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) {
-            try {
-                step(generator.next(value));
-            } catch (e) {
-                reject(e);
-            }
-        }
-        function rejected(value) {
-            try {
-                step(generator["throw"](value));
-            } catch (e) {
-                reject(e);
-            }
-        }
-        function step(result) {
-            result.done ? resolve(result.value) : new P(function (resolve) {
-                resolve(result.value);
-            }).then(fulfilled, rejected);
-        }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = this && this.__generator || function (thisArg, body) {
-    var _ = { label: 0, sent: function sent() {
-            if (t[0] & 1) throw t[1];return t[1];
-        }, trys: [], ops: [] },
-        f,
-        y,
-        t,
-        g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function () {
-        return this;
-    }), g;
-    function verb(n) {
-        return function (v) {
-            return step([n, v]);
-        };
-    }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) {
-            try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0:case 1:
-                        t = op;break;
-                    case 4:
-                        _.label++;return { value: op[1], done: false };
-                    case 5:
-                        _.label++;y = op[1];op = [0];continue;
-                    case 7:
-                        op = _.ops.pop();_.trys.pop();continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
-                            _ = 0;continue;
-                        }
-                        if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
-                            _.label = op[1];break;
-                        }
-                        if (op[0] === 6 && _.label < t[1]) {
-                            _.label = t[1];t = op;break;
-                        }
-                        if (t && _.label < t[2]) {
-                            _.label = t[2];_.ops.push(op);break;
-                        }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop();continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) {
-                op = [6, e];y = 0;
-            } finally {
-                f = t = 0;
-            }
-        }if (op[0] & 5) throw op[1];return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-function flipFrame(frame, width, height) {
-    var _this = this;
-    return new Promise(function (resolve, reject) {
-        return __awaiter(_this, void 0, void 0, function () {
-            var mid, rowLen, flipRow, rowNum, topPointer, bottomPointer, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        mid = height / 2 | 0;
-                        rowLen = width * 4;
-                        flipRow = new Uint8Array(rowLen);
-                        for (rowNum = 0; rowNum < mid; ++rowNum) {
-                            topPointer = rowNum * rowLen;
-                            bottomPointer = (height - rowNum - 1) * rowLen;
-                            flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
-                            frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
-                            frame.set(flipRow, bottomPointer);
-                        }
-                        _a = resolve;
-                        return [4 /*yield*/, toRGBData(frame)];
-                    case 1:
-                        _a.apply(void 0, [_b.sent()]);
-                        return [2 /*return*/];
-                }
-            });
-        });
-    });
-}
-exports.flipFrame = flipFrame;
-/**
- * Removes Alpha values from frame and transform data into number[] and string[]
- *
- * @param frame
- * @param width
- * @param hieght
- * @return { rgbData:number[], rgbData: string[]}
- */
-function toRGBData(frame) {
-    //create pixels from frame
-    //remove alpha
-    //transform pixels into string formated version
-    return new Promise(function (resolve, reject) {
-        var numericalRGBData = frame.filter(function (pixel, index) {
-            return (index + 1) % 4 !== 0;
-        });
-        var stringRGBData = [];
-        var pixel = '';
-        numericalRGBData.forEach(function (color, index) {
-            pixel += pad(color);
-            if ((index + 1) % 3 === 0) {
-                stringRGBData.push(pixel);
-                pixel = '';
-            }
-        });
-        // postMessage({ message: 'processFrame complete', data: { numericalRGBData, stringRGBData } });
-        resolve({ numericalRGBData: numericalRGBData, stringRGBData: stringRGBData });
-    });
-}
-function pad(color) {
-    if (color < 16) {
-        return "0" + color.toString(16);
-    } else {
-        return color.toString(16);
-    }
-}
-},{}],16:[function(require,module,exports) {
+},{"./encoded.image":13,"./LZW":12}],16:[function(require,module,exports) {
 "use strict";
 
 var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -1270,40 +1107,43 @@ var __generator = this && this.__generator || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var color_table_generator_1 = require("./color.table.generator");
 var gif_generator_1 = require("./gif.generator");
-var process_frame_service_1 = require("./process.frame.service");
 var GIFExporter = /** @class */function () {
     function GIFExporter(engine, options) {
         this._gifGenerator = new gif_generator_1.GIFGenerator();
         this._canvas = engine.getRenderingCanvas();
-        this._width = engine.getRenderWidth();
-        this._height = engine.getRenderHeight();
-        this._gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
         this._delay = options.delay;
         this._duration = options.duration;
+        // this._gifWorker = new Worker('./gif.generator.service.ts');
     }
     GIFExporter.prototype.start = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
-                var colorLookup, frames, stringRGBFrames, mappedFrames;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                var colorLookup, frames, _a, numericalRGBData, stringRGBFrames, mappedFrames;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
+                            this.init();
                             return [4 /*yield*/, this.createColorTable()];
                         case 1:
-                            colorLookup = _a.sent();
+                            colorLookup = _b.sent();
                             return [4 /*yield*/, this.recordCanvas()];
                         case 2:
-                            frames = _a.sent();
+                            frames = _b.sent();
                             return [4 /*yield*/, this.processFrames(frames)];
                         case 3:
-                            stringRGBFrames = _a.sent();
+                            _a = _b.sent(), numericalRGBData = _a.numericalRGBFrames[0], stringRGBFrames = _a.stringRGBFrames;
                             return [4 /*yield*/, this.mapPixelsToIndex(stringRGBFrames, colorLookup)];
                         case 4:
-                            mappedFrames = _a.sent();
+                            mappedFrames = _b.sent();
                             return [4 /*yield*/, this.writeFrames(mappedFrames)];
                         case 5:
-                            _a.sent();
+                            _b.sent();
+                            // this._message = { job: 'getStream', params: {} };
+                            // this._gifWorker.postMessage(this._message);
+                            // this._gifWorker.onmessage = ({ data }) => {
+                            // 	resolve(data);
+                            // };
                             resolve(this._gifGenerator.getStream());
                             return [2 /*return*/];
                     }
@@ -1317,7 +1157,7 @@ var GIFExporter = /** @class */function () {
         if (filename === void 0) {
             filename = 'canvasGIF.gif';
         }
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, void 0, Promise, function () {
             var gif, url, download;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1374,7 +1214,6 @@ var GIFExporter = /** @class */function () {
                     }, this._delay);
                     setTimeout(function () {
                         clearInterval(intervalRef);
-                        console.log(frameCollection);
                         resolve(frameCollection);
                     }, this._duration);
                     return [2 /*return*/];
@@ -1391,16 +1230,18 @@ var GIFExporter = /** @class */function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
-                var frame, _a, numericalRGBData, stringRGBData, _b, colorLookup, colorTable;
+                var frame, frames, _a, numericalRGBData, stringRGBFrames, _b, colorLookup, colorTable;
                 return __generator(this, function (_c) {
                     switch (_c.label) {
                         case 0:
                             return [4 /*yield*/, this.getFrame()];
                         case 1:
                             frame = _c.sent();
-                            return [4 /*yield*/, this.frameToRGBData(frame)];
+                            frames = [];
+                            frames.push(frame);
+                            return [4 /*yield*/, this.processFrames(frames)];
                         case 2:
-                            _a = _c.sent(), numericalRGBData = _a.numericalRGBData, stringRGBData = _a.stringRGBData;
+                            _a = _c.sent(), numericalRGBData = _a.numericalRGBFrames[0], stringRGBFrames = _a.stringRGBFrames;
                             this._colorTableGen = new color_table_generator_1.ColorTableGenerator(numericalRGBData);
                             return [4 /*yield*/, this._colorTableGen.generate()];
                         case 3:
@@ -1445,16 +1286,8 @@ var GIFExporter = /** @class */function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
-                var _a, numericalRGBData, stringRGBData;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            return [4 /*yield*/, process_frame_service_1.flipFrame(frame, this._width, this._height)];
-                        case 1:
-                            _a = _b.sent(), numericalRGBData = _a.numericalRGBData, stringRGBData = _a.stringRGBData;
-                            resolve({ numericalRGBData: numericalRGBData, stringRGBData: stringRGBData });
-                            return [2 /*return*/];
-                    }
+                return __generator(this, function (_a) {
+                    return [2 /*return*/];
                 });
             });
         });
@@ -1462,21 +1295,19 @@ var GIFExporter = /** @class */function () {
     GIFExporter.prototype.processFrames = function (frames) {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var stringRGBFrames = [];
-            frames.forEach(function (frame, index, array) {
-                return __awaiter(_this, void 0, void 0, function () {
-                    var _a, numericalRGBData, stringRGBData;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                return [4 /*yield*/, this.frameToRGBData(frame)];
-                            case 1:
-                                _a = _b.sent(), numericalRGBData = _a.numericalRGBData, stringRGBData = _a.stringRGBData;
-                                stringRGBFrames.push(stringRGBData);
-                                if (index + 1 === array.length) resolve(stringRGBFrames);
-                                return [2 /*return*/];
-                        }
-                    });
+            return __awaiter(_this, void 0, void 0, function () {
+                var worker;
+                return __generator(this, function (_a) {
+                    worker = new Worker("/process.frame.service.193a1b77.js");
+                    this._message = { job: 'flipFrames', params: { frames: frames, width: this._width, height: this._height } };
+                    worker.postMessage(this._message);
+                    worker.onmessage = function (_a) {
+                        var _b = _a.data,
+                            numericalRGBFrames = _b.numericalRGBFrames,
+                            stringRGBFrames = _b.stringRGBFrames;
+                        resolve({ numericalRGBFrames: numericalRGBFrames, stringRGBFrames: stringRGBFrames });
+                    };
+                    return [2 /*return*/];
                 });
             });
         });
@@ -1484,6 +1315,8 @@ var GIFExporter = /** @class */function () {
     GIFExporter.prototype.writeColorTable = function (globalColorTable) {
         var _this = this;
         return new Promise(function (resolve, reject) {
+            _this._message = { job: 'init', params: { width: _this._width, height: _this._height, globalColorTable: globalColorTable } };
+            // this._gifWorker.postMessage(this._message);
             _this._gifGenerator.init(_this._width, _this._height, globalColorTable);
             resolve();
         });
@@ -1491,6 +1324,9 @@ var GIFExporter = /** @class */function () {
     GIFExporter.prototype.writeFrames = function (mappedFrames) {
         var _this = this;
         return new Promise(function (resolve, reject) {
+            _this._message = { job: 'generateFrame', params: { frames: mappedFrames } };
+            // this._gifWorker.postMessage(this._message);
+            // resolve();
             mappedFrames.forEach(function (frame) {
                 return __awaiter(_this, void 0, void 0, function () {
                     return __generator(this, function (_a) {
@@ -1511,12 +1347,12 @@ var GIFExporter = /** @class */function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
-                var indexedPixels, indexedFrames;
+                var indexedFrames;
                 var _this = this;
                 return __generator(this, function (_a) {
-                    indexedPixels = [];
                     indexedFrames = [];
                     frames.forEach(function (frame) {
+                        var indexedPixels = [];
                         frame.forEach(function (pixel) {
                             if (colorLookup[pixel]) {
                                 indexedPixels.push(colorLookup[pixel]);
@@ -1532,10 +1368,15 @@ var GIFExporter = /** @class */function () {
             });
         });
     };
+    GIFExporter.prototype.init = function () {
+        this._width = this._canvas.width;
+        this._height = this._canvas.height;
+        this._gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
+    };
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./color.table.generator":14,"./gif.generator":15,"./process.frame.service":34}],11:[function(require,module,exports) {
+},{"./color.table.generator":14,"./gif.generator":15,"./process.frame.service.ts":[["process.frame.service.193a1b77.js",41],"process.frame.service.193a1b77.map",41]}],11:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1613,7 +1454,7 @@ window.addEventListener('DOMContentLoaded', function () {
         game.stopGIF();
     });
 });
-},{"./gif.exporter":16}],37:[function(require,module,exports) {
+},{"./gif.exporter":16}],36:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1642,7 +1483,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '50387' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62241' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1783,5 +1624,135 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[37,11], null)
+},{}],45:[function(require,module,exports) {
+var bundleURL = null;
+function getBundleURLCached() {
+  if (!bundleURL) {
+    bundleURL = getBundleURL();
+  }
+
+  return bundleURL;
+}
+
+function getBundleURL() {
+  // Attempt to find the URL of the current script and use that as the base URL
+  try {
+    throw new Error();
+  } catch (err) {
+    var matches = ('' + err.stack).match(/(https?|file|ftp):\/\/[^)\n]+/g);
+    if (matches) {
+      return getBaseURL(matches[0]);
+    }
+  }
+
+  return '/';
+}
+
+function getBaseURL(url) {
+  return ('' + url).replace(/^((?:https?|file|ftp):\/\/.+)\/[^/]+$/, '$1') + '/';
+}
+
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+},{}],44:[function(require,module,exports) {
+var getBundleURL = require('./bundle-url').getBundleURL;
+
+function loadBundlesLazy(bundles) {
+  if (!Array.isArray(bundles)) {
+    bundles = [bundles];
+  }
+
+  var id = bundles[bundles.length - 1];
+
+  try {
+    return Promise.resolve(require(id));
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      return new LazyPromise(function (resolve, reject) {
+        loadBundles(bundles.slice(0, -1)).then(function () {
+          return require(id);
+        }).then(resolve, reject);
+      });
+    }
+
+    throw err;
+  }
+}
+
+function loadBundles(bundles) {
+  return Promise.all(bundles.map(loadBundle));
+}
+
+var bundleLoaders = {};
+function registerBundleLoader(type, loader) {
+  bundleLoaders[type] = loader;
+}
+
+module.exports = exports = loadBundlesLazy;
+exports.load = loadBundles;
+exports.register = registerBundleLoader;
+
+var bundles = {};
+function loadBundle(bundle) {
+  var id;
+  if (Array.isArray(bundle)) {
+    id = bundle[1];
+    bundle = bundle[0];
+  }
+
+  if (bundles[bundle]) {
+    return bundles[bundle];
+  }
+
+  var type = (bundle.substring(bundle.lastIndexOf('.') + 1, bundle.length) || bundle).toLowerCase();
+  var bundleLoader = bundleLoaders[type];
+  if (bundleLoader) {
+    return bundles[bundle] = bundleLoader(getBundleURL() + bundle).then(function (resolved) {
+      if (resolved) {
+        module.bundle.register(id, resolved);
+      }
+
+      return resolved;
+    });
+  }
+}
+
+function LazyPromise(executor) {
+  this.executor = executor;
+  this.promise = null;
+}
+
+LazyPromise.prototype.then = function (onSuccess, onError) {
+  if (this.promise === null) this.promise = new Promise(this.executor);
+  return this.promise.then(onSuccess, onError);
+};
+
+LazyPromise.prototype.catch = function (onError) {
+  if (this.promise === null) this.promise = new Promise(this.executor);
+  return this.promise.catch(onError);
+};
+},{"./bundle-url":45}],46:[function(require,module,exports) {
+module.exports = function loadJSBundle(bundle) {
+  return new Promise(function (resolve, reject) {
+    var script = document.createElement('script');
+    script.async = true;
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = bundle;
+    script.onerror = function (e) {
+      script.onerror = script.onload = null;
+      reject(e);
+    };
+
+    script.onload = function () {
+      script.onerror = script.onload = null;
+      resolve();
+    };
+
+    document.getElementsByTagName('head')[0].appendChild(script);
+  });
+};
+},{}],0:[function(require,module,exports) {
+var b=require(44);b.register("js",require(46));
+},{}]},{},[36,0,11], null)
 //# sourceMappingURL=/game.bb8bdadb.map

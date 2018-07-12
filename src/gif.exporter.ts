@@ -25,7 +25,9 @@ export class GIFExporter {
 	public start(): Promise<number[]> {
 		return new Promise(async (resolve, reject) => {
 			this.init();
+
 			const colorLookup = await this.createColorTable();
+
 			const frames: Uint8Array[] = await this.recordCanvas();
 			const {
 				numericalRGBFrames: [numericalRGBData],
@@ -93,6 +95,7 @@ export class GIFExporter {
 	private createColorTable(): Promise<{ [index: string]: number }> {
 		return new Promise(async (resolve, reject) => {
 			const frame = await this.getFrame();
+
 			const frames: Uint8Array[] = [];
 			frames.push(frame);
 			const {
@@ -147,20 +150,16 @@ export class GIFExporter {
 
 	private processFrames(frames: Uint8Array[]): Promise<{ numericalRGBFrames: Uint8Array[]; stringRGBFrames: string[][] }> {
 		return new Promise(async (resolve, reject) => {
-			// const stringRGBFrames: string[][] = [];
+			const worker = new Worker('./process.frame.service.ts');
+			this._message = { job: 'flipFrames', params: { frames, width: this._width, height: this._height } };
 
-			// const worker = new Worker('./process.frame.service.ts');
-			// worker.postMessage({ job: 'flipFrame', params: { frames, height: this._height, width: this._width } });
-			// worker.onmessage = ({
-			// 	data: {
-			// 		message,
-			// 		data: { numericalRGBFrames, stringRGBFrames },
-			// 	},
-			// }) => {
-			// 	resolve({ numericalRGBFrames, stringRGBFrames });
-			// };
+			worker.postMessage(this._message);
 
-			resolve(await flipFrames(frames, this._width, this._height));
+			worker.onmessage = ({ data: { numericalRGBFrames, stringRGBFrames } }) => {
+				resolve({ numericalRGBFrames, stringRGBFrames });
+			};
+
+			// resolve(await flipFrames(frames, this._width, this._height));
 		});
 	}
 
