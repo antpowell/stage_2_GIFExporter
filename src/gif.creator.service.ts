@@ -966,91 +966,86 @@ addEventListener('message', ev => {
 
 const gifGenerator: GIFGenerator = new GIFGenerator();
 
-onmessage = async ({ data: { job, params } }) => {
+onmessage = ({ data: { job, params } }) => {
 	if (job === 'createGIF') {
 		const { frames, width, height } = params;
-		const colorLookup = await createColorTable(frames[0], width, height);
-		const { numericalRGBFrames, stringRGBFrames } = await processFrames(frames, width, height);
+		const colorLookup: { [index: string]: number } = createColorTable(frames[0], width, height);
+		const { numericalRGBFrames, stringRGBFrames } = processFrames(frames, width, height);
 		const gifData = generateGIF(stringRGBFrames, colorLookup);
 		ctx.postMessage(gifData);
 	}
 };
 
-function createColorTable(frame: Uint8Array, width: number, height: number): Promise<{ [index: string]: number }> {
-	return new Promise(async (resolve, rejct) => {
-		_colorTableGen = new ColorTableGenerator(frame);
-		const [colorLookup, colorTable] = await _colorTableGen.generate();
-		await writeColorTable(colorTable, width, height);
-		resolve(colorLookup);
-
-		function writeColorTable(globalColorTable: string[], width: number, height: number): Promise<void> {
-			return new Promise(async (resolve, reject) => {
-				gifGenerator.init(width, height, globalColorTable);
-				resolve();
-			});
-		}
+function createColorTable(frame: Uint8Array, width: number, height: number): { [index: string]: number } {
+	_colorTableGen = new ColorTableGenerator(frame);
+	let colorLookup: { [index: string]: number }, colorTable: string[];
+	_colorTableGen.generate().then(([lookup, table]) => {
+		[lookup, table] = [colorLookup, colorTable];
+		writeColorTable(colorTable, width, height);
 	});
+	return colorLookup;
+
+	function writeColorTable(globalColorTable: string[], width: number, height: number): Promise<void> {
+		gifGenerator.init(width, height, globalColorTable);
+		return;
+	}
 }
 
 function processFrames(
 	frames: Uint8Array[],
 	width: number,
 	height: number
-): Promise<{
+): {
 	numericalRGBFrames: Uint8Array[];
 	stringRGBFrames: string[][];
-}> {
-	return new Promise(async (resolve, reject) => {
-		function flipFrames(): Promise<{
-			numericalRGBFrames: Uint8Array[];
-			stringRGBFrames: string[][];
-		}> {
-			return new Promise((resolve, rejcet) => {
-				const numericalRGBFrames: Uint8Array[] = [];
-				const stringRGBFrames: string[][] = [];
-				frames.forEach(frame => {
-					const mid = (height / 2) | 0;
-					const rowLen = width * 4;
+} {
+	function flipFrames(): {
+		numericalRGBFrames: Uint8Array[];
+		stringRGBFrames: string[][];
+	} {
+		const numericalRGBFrames: Uint8Array[] = [];
+		const stringRGBFrames: string[][] = [];
+		frames.forEach(frame => {
+			const mid = (height / 2) | 0;
+			const rowLen = width * 4;
 
-					let flipRow = new Uint8Array(rowLen);
-					for (let rowNum = 0; rowNum < mid; ++rowNum) {
-						let topPointer = rowNum * rowLen;
-						let bottomPointer = (height - rowNum - 1) * rowLen;
-						flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
-						frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
-						frame.set(flipRow, bottomPointer);
-					}
-					const { numericalRGBData, stringRGBData } = toRGB(frame);
-					numericalRGBFrames.push(numericalRGBData);
-					stringRGBFrames.push(stringRGBData);
-				});
-				resolve({ numericalRGBFrames, stringRGBFrames });
-			});
-		}
-		function toRGB(frame: Uint8Array): { numericalRGBData: Uint8Array; stringRGBData: string[] } {
-			const numericalRGBData = frame.filter((pixel: number, index: number) => (index + 1) % 4 !== 0);
-
-			const stringRGBData: string[] = [];
-			let pixel = '';
-			numericalRGBData.forEach((color, index) => {
-				pixel += pad(color);
-				if ((index + 1) % 3 === 0) {
-					stringRGBData.push(pixel);
-					pixel = '';
-				}
-			});
-			return { numericalRGBData, stringRGBData };
-		}
-
-		function pad(color: number): string {
-			if (color < 16) {
-				return `0${color.toString(16)}`;
-			} else {
-				return color.toString(16);
+			let flipRow = new Uint8Array(rowLen);
+			for (let rowNum = 0; rowNum < mid; ++rowNum) {
+				let topPointer = rowNum * rowLen;
+				let bottomPointer = (height - rowNum - 1) * rowLen;
+				flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
+				frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
+				frame.set(flipRow, bottomPointer);
 			}
+			const { numericalRGBData, stringRGBData } = toRGB(frame);
+			numericalRGBFrames.push(numericalRGBData);
+			stringRGBFrames.push(stringRGBData);
+		});
+		return { numericalRGBFrames, stringRGBFrames };
+	}
+	function toRGB(frame: Uint8Array): { numericalRGBData: Uint8Array; stringRGBData: string[] } {
+		const numericalRGBData = frame.filter((pixel: number, index: number) => (index + 1) % 4 !== 0);
+
+		const stringRGBData: string[] = [];
+		let pixel = '';
+		numericalRGBData.forEach((color, index) => {
+			pixel += pad(color);
+			if ((index + 1) % 3 === 0) {
+				stringRGBData.push(pixel);
+				pixel = '';
+			}
+		});
+		return { numericalRGBData, stringRGBData };
+	}
+
+	function pad(color: number): string {
+		if (color < 16) {
+			return `0${color.toString(16)}`;
+		} else {
+			return color.toString(16);
 		}
-		resolve(await flipFrames());
-	});
+	}
+	return flipFrames();
 }
 
 function generateGIF(frames: string[][], colorLookup: { [index: string]: number }) {

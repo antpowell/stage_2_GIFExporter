@@ -209,7 +209,6 @@ var __generator = this && this.__generator || function (thisArg, body) {
         }if (op[0] & 5) throw op[1];return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var _this = this;
 Object.defineProperty(exports, "__esModule", { value: true });
 function toInt(v) {
     return ~~v;
@@ -969,125 +968,80 @@ onmessage = function onmessage(_a) {
     var _b = _a.data,
         job = _b.job,
         params = _b.params;
-    return __awaiter(_this, void 0, void 0, function () {
-        var frames, width, height, colorLookup, _c, numericalRGBFrames, stringRGBFrames, gifData;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
-                case 0:
-                    if (!(job === 'createGIF')) return [3 /*break*/, 3];
-                    frames = params.frames, width = params.width, height = params.height;
-                    return [4 /*yield*/, createColorTable(frames[0], width, height)];
-                case 1:
-                    colorLookup = _d.sent();
-                    return [4 /*yield*/, processFrames(frames, width, height)];
-                case 2:
-                    _c = _d.sent(), numericalRGBFrames = _c.numericalRGBFrames, stringRGBFrames = _c.stringRGBFrames;
-                    gifData = generateGIF(stringRGBFrames, colorLookup);
-                    ctx.postMessage(gifData);
-                    _d.label = 3;
-                case 3:
-                    return [2 /*return*/];
-            }
-        });
-    });
+    if (job === 'createGIF') {
+        var frames = params.frames,
+            width = params.width,
+            height = params.height;
+        var colorLookup = createColorTable(frames[0], width, height);
+        var _c = processFrames(frames, width, height),
+            numericalRGBFrames = _c.numericalRGBFrames,
+            stringRGBFrames = _c.stringRGBFrames;
+        var gifData = generateGIF(stringRGBFrames, colorLookup);
+        ctx.postMessage(gifData);
+    }
 };
 function createColorTable(frame, width, height) {
-    var _this = this;
-    return new Promise(function (resolve, rejct) {
-        return __awaiter(_this, void 0, void 0, function () {
-            function writeColorTable(globalColorTable, width, height) {
-                var _this = this;
-                return new Promise(function (resolve, reject) {
-                    return __awaiter(_this, void 0, void 0, function () {
-                        return __generator(this, function (_a) {
-                            gifGenerator.init(width, height, globalColorTable);
-                            resolve();
-                            return [2 /*return*/];
-                        });
-                    });
-                });
-            }
-            var _a, colorLookup, colorTable;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _colorTableGen = new ColorTableGenerator(frame);
-                        return [4 /*yield*/, _colorTableGen.generate()];
-                    case 1:
-                        _a = _b.sent(), colorLookup = _a[0], colorTable = _a[1];
-                        return [4 /*yield*/, writeColorTable(colorTable, width, height)];
-                    case 2:
-                        _b.sent();
-                        resolve(colorLookup);
-                        return [2 /*return*/];
-                }
-            });
-        });
+    _colorTableGen = new ColorTableGenerator(frame);
+    var colorLookup, colorTable;
+    _colorTableGen.generate().then(function (_a) {
+        var lookup = _a[0],
+            table = _a[1];
+        var _b;
+        _b = [colorLookup, colorTable], lookup = _b[0], table = _b[1];
+        writeColorTable(colorTable, width, height);
     });
+    return colorLookup;
+    function writeColorTable(globalColorTable, width, height) {
+        gifGenerator.init(width, height, globalColorTable);
+        return;
+    }
 }
 function processFrames(frames, width, height) {
-    var _this = this;
-    return new Promise(function (resolve, reject) {
-        return __awaiter(_this, void 0, void 0, function () {
-            function flipFrames() {
-                return new Promise(function (resolve, rejcet) {
-                    var numericalRGBFrames = [];
-                    var stringRGBFrames = [];
-                    frames.forEach(function (frame) {
-                        var mid = height / 2 | 0;
-                        var rowLen = width * 4;
-                        var flipRow = new Uint8Array(rowLen);
-                        for (var rowNum = 0; rowNum < mid; ++rowNum) {
-                            var topPointer = rowNum * rowLen;
-                            var bottomPointer = (height - rowNum - 1) * rowLen;
-                            flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
-                            frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
-                            frame.set(flipRow, bottomPointer);
-                        }
-                        var _a = toRGB(frame),
-                            numericalRGBData = _a.numericalRGBData,
-                            stringRGBData = _a.stringRGBData;
-                        numericalRGBFrames.push(numericalRGBData);
-                        stringRGBFrames.push(stringRGBData);
-                    });
-                    resolve({ numericalRGBFrames: numericalRGBFrames, stringRGBFrames: stringRGBFrames });
-                });
+    function flipFrames() {
+        var numericalRGBFrames = [];
+        var stringRGBFrames = [];
+        frames.forEach(function (frame) {
+            var mid = height / 2 | 0;
+            var rowLen = width * 4;
+            var flipRow = new Uint8Array(rowLen);
+            for (var rowNum = 0; rowNum < mid; ++rowNum) {
+                var topPointer = rowNum * rowLen;
+                var bottomPointer = (height - rowNum - 1) * rowLen;
+                flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
+                frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
+                frame.set(flipRow, bottomPointer);
             }
-            function toRGB(frame) {
-                var numericalRGBData = frame.filter(function (pixel, index) {
-                    return (index + 1) % 4 !== 0;
-                });
-                var stringRGBData = [];
-                var pixel = '';
-                numericalRGBData.forEach(function (color, index) {
-                    pixel += pad(color);
-                    if ((index + 1) % 3 === 0) {
-                        stringRGBData.push(pixel);
-                        pixel = '';
-                    }
-                });
-                return { numericalRGBData: numericalRGBData, stringRGBData: stringRGBData };
-            }
-            function pad(color) {
-                if (color < 16) {
-                    return "0" + color.toString(16);
-                } else {
-                    return color.toString(16);
-                }
-            }
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = resolve;
-                        return [4 /*yield*/, flipFrames()];
-                    case 1:
-                        _a.apply(void 0, [_b.sent()]);
-                        return [2 /*return*/];
-                }
-            });
+            var _a = toRGB(frame),
+                numericalRGBData = _a.numericalRGBData,
+                stringRGBData = _a.stringRGBData;
+            numericalRGBFrames.push(numericalRGBData);
+            stringRGBFrames.push(stringRGBData);
         });
-    });
+        return { numericalRGBFrames: numericalRGBFrames, stringRGBFrames: stringRGBFrames };
+    }
+    function toRGB(frame) {
+        var numericalRGBData = frame.filter(function (pixel, index) {
+            return (index + 1) % 4 !== 0;
+        });
+        var stringRGBData = [];
+        var pixel = '';
+        numericalRGBData.forEach(function (color, index) {
+            pixel += pad(color);
+            if ((index + 1) % 3 === 0) {
+                stringRGBData.push(pixel);
+                pixel = '';
+            }
+        });
+        return { numericalRGBData: numericalRGBData, stringRGBData: stringRGBData };
+    }
+    function pad(color) {
+        if (color < 16) {
+            return "0" + color.toString(16);
+        } else {
+            return color.toString(16);
+        }
+    }
+    return flipFrames();
 }
 function generateGIF(frames, colorLookup) {
     var _this = this;

@@ -300,7 +300,7 @@ var Game = /** @class */function () {
         });
         this._gifExporter = new gif_exporter_single_worker_1.GIFCreator(this._engine, {
             delay: 60,
-            duration: 5000
+            duration: 2000
         });
     }
     Game.prototype.createScene = function () {
