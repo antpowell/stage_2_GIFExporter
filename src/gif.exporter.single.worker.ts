@@ -25,8 +25,9 @@ export class GIFCreator {
 				const worker = new Worker('./gif.creator.service.ts');
 				this._message = { job: 'createGIF', params: { frames: frameCollection, width: this._width, height: this._height } };
 				worker.postMessage(this._message);
-				worker.onmessage = ({ data: { gifData } }) => {
-					resolve(gifData);
+				worker.onmessage = ({ data }) => {
+					console.log('complete', data);
+					resolve(data);
 				};
 			}, this._duration);
 		});

@@ -468,21 +468,20 @@ export class ColorTableGenerator {
 		this._colorTable = this._neuQuant.getColormap();
 	}
 
-	public generate(): Promise<[{ [index: string]: number }, string[]]> {
-		return new Promise((resolve, reject) => {
-			let pixel: string = '';
-			let count = 0;
-			this._colorTable.forEach((value, index, array) => {
-				pixel += this.pad(value);
-				if ((index + 1) % 3 === 0) {
-					this._GCT.push(pixel);
-					this._colorLookup[pixel] = count;
-					count++;
-					pixel = '';
-				}
-				if (index === this._colorTable.length - 1) resolve([this._colorLookup, this._GCT]);
-			});
+	public generate(): [{ [index: string]: number }, string[]] {
+		let pixel: string = '';
+		let count = 0;
+		this._colorTable.forEach((value, index, array) => {
+			pixel += this.pad(value);
+			if ((index + 1) % 3 === 0) {
+				this._GCT.push(pixel);
+				this._colorLookup[pixel] = count;
+				count++;
+				pixel = '';
+			}
+			if (index === this._colorTable.length - 1) return [this._colorLookup, this._GCT];
 		});
+		return [this._colorLookup, this._GCT];
 	}
 
 	public lookupRGB(pixel: string): number {
@@ -972,6 +971,7 @@ onmessage = ({ data: { job, params } }) => {
 		const colorLookup: { [index: string]: number } = createColorTable(frames[0], width, height);
 		const { numericalRGBFrames, stringRGBFrames } = processFrames(frames, width, height);
 		const gifData = generateGIF(stringRGBFrames, colorLookup);
+		console.log('worker gif data', gifData);
 		ctx.postMessage(gifData);
 	}
 };
@@ -979,10 +979,8 @@ onmessage = ({ data: { job, params } }) => {
 function createColorTable(frame: Uint8Array, width: number, height: number): { [index: string]: number } {
 	_colorTableGen = new ColorTableGenerator(frame);
 	let colorLookup: { [index: string]: number }, colorTable: string[];
-	_colorTableGen.generate().then(([lookup, table]) => {
-		[lookup, table] = [colorLookup, colorTable];
-		writeColorTable(colorTable, width, height);
-	});
+	[colorLookup, colorTable] = _colorTableGen.generate();
+	writeColorTable(colorTable, width, height);
 	return colorLookup;
 
 	function writeColorTable(globalColorTable: string[], width: number, height: number): Promise<void> {
@@ -1049,29 +1047,25 @@ function processFrames(
 }
 
 function generateGIF(frames: string[][], colorLookup: { [index: string]: number }) {
-	return new Promise(async (resolve, reject) => {
-		function mapPixelsToIndex(frames: string[][], colorLookup: { [index: string]: number }): Promise<number[][]> {
-			return new Promise(async (resolve, reject) => {
-				const indexedFrames: number[][] = [];
-				frames.forEach(frame => {
-					const indexedPixels: number[] = [];
-					frame.forEach(pixel => {
-						if (colorLookup[pixel]) {
-							indexedPixels.push(colorLookup[pixel]);
-						} else {
-							indexedPixels.push(_colorTableGen.lookupRGB(pixel));
-						}
-					});
-					indexedFrames.push(indexedPixels);
-				});
-				resolve(indexedFrames);
+	function mapPixelsToIndex(frames: string[][], colorLookup: { [index: string]: number }): number[][] {
+		const indexedFrames: number[][] = [];
+		frames.forEach(frame => {
+			const indexedPixels: number[] = [];
+			frame.forEach(pixel => {
+				if (colorLookup[pixel]) {
+					indexedPixels.push(colorLookup[pixel]);
+				} else {
+					indexedPixels.push(_colorTableGen.lookupRGB(pixel));
+				}
 			});
-		}
-		const indexedFrames = await mapPixelsToIndex(frames, colorLookup);
-
-		indexedFrames.forEach(frame => {
-			gifGenerator.generateFrame(frame);
+			indexedFrames.push(indexedPixels);
 		});
-		resolve(gifGenerator.getStream());
+		return indexedFrames;
+	}
+	const indexedFrames = mapPixelsToIndex(frames, colorLookup);
+
+	indexedFrames.forEach(frame => {
+		gifGenerator.generateFrame(frame);
 	});
+	return gifGenerator.getStream();
 }

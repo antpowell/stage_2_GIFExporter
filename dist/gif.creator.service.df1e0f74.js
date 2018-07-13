@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({27:[function(require,module,exports) {
+})({34:[function(require,module,exports) {
 "use strict";
 /* ----------------------------------------------NeuQuant START---------------------------------------------------------- */
 /* NeuQuant Neural-Net Quantization Algorithm
@@ -595,20 +595,19 @@ var ColorTableGenerator = /** @class */function () {
     }
     ColorTableGenerator.prototype.generate = function () {
         var _this = this;
-        return new Promise(function (resolve, reject) {
-            var pixel = '';
-            var count = 0;
-            _this._colorTable.forEach(function (value, index, array) {
-                pixel += _this.pad(value);
-                if ((index + 1) % 3 === 0) {
-                    _this._GCT.push(pixel);
-                    _this._colorLookup[pixel] = count;
-                    count++;
-                    pixel = '';
-                }
-                if (index === _this._colorTable.length - 1) resolve([_this._colorLookup, _this._GCT]);
-            });
+        var pixel = '';
+        var count = 0;
+        this._colorTable.forEach(function (value, index, array) {
+            pixel += _this.pad(value);
+            if ((index + 1) % 3 === 0) {
+                _this._GCT.push(pixel);
+                _this._colorLookup[pixel] = count;
+                count++;
+                pixel = '';
+            }
+            if (index === _this._colorTable.length - 1) return [_this._colorLookup, _this._GCT];
         });
+        return [this._colorLookup, this._GCT];
     };
     ColorTableGenerator.prototype.lookupRGB = function (pixel) {
         var R = parseInt(pixel.substr(0, 2), 16);
@@ -977,19 +976,16 @@ onmessage = function onmessage(_a) {
             numericalRGBFrames = _c.numericalRGBFrames,
             stringRGBFrames = _c.stringRGBFrames;
         var gifData = generateGIF(stringRGBFrames, colorLookup);
+        console.log('worker gif data', gifData);
         ctx.postMessage(gifData);
     }
 };
 function createColorTable(frame, width, height) {
+    var _a;
     _colorTableGen = new ColorTableGenerator(frame);
     var colorLookup, colorTable;
-    _colorTableGen.generate().then(function (_a) {
-        var lookup = _a[0],
-            table = _a[1];
-        var _b;
-        _b = [colorLookup, colorTable], lookup = _b[0], table = _b[1];
-        writeColorTable(colorTable, width, height);
-    });
+    _a = _colorTableGen.generate(), colorLookup = _a[0], colorTable = _a[1];
+    writeColorTable(colorTable, width, height);
     return colorLookup;
     function writeColorTable(globalColorTable, width, height) {
         gifGenerator.init(width, height, globalColorTable);
@@ -1044,51 +1040,28 @@ function processFrames(frames, width, height) {
     return flipFrames();
 }
 function generateGIF(frames, colorLookup) {
-    var _this = this;
-    return new Promise(function (resolve, reject) {
-        return __awaiter(_this, void 0, void 0, function () {
-            function mapPixelsToIndex(frames, colorLookup) {
-                var _this = this;
-                return new Promise(function (resolve, reject) {
-                    return __awaiter(_this, void 0, void 0, function () {
-                        var indexedFrames;
-                        return __generator(this, function (_a) {
-                            indexedFrames = [];
-                            frames.forEach(function (frame) {
-                                var indexedPixels = [];
-                                frame.forEach(function (pixel) {
-                                    if (colorLookup[pixel]) {
-                                        indexedPixels.push(colorLookup[pixel]);
-                                    } else {
-                                        indexedPixels.push(_colorTableGen.lookupRGB(pixel));
-                                    }
-                                });
-                                indexedFrames.push(indexedPixels);
-                            });
-                            resolve(indexedFrames);
-                            return [2 /*return*/];
-                        });
-                    });
-                });
-            }
-            var indexedFrames;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        return [4 /*yield*/, mapPixelsToIndex(frames, colorLookup)];
-                    case 1:
-                        indexedFrames = _a.sent();
-                        indexedFrames.forEach(function (frame) {
-                            gifGenerator.generateFrame(frame);
-                        });
-                        resolve(gifGenerator.getStream());
-                        return [2 /*return*/];
+    function mapPixelsToIndex(frames, colorLookup) {
+        var indexedFrames = [];
+        frames.forEach(function (frame) {
+            var indexedPixels = [];
+            frame.forEach(function (pixel) {
+                if (colorLookup[pixel]) {
+                    indexedPixels.push(colorLookup[pixel]);
+                } else {
+                    indexedPixels.push(_colorTableGen.lookupRGB(pixel));
                 }
             });
+            indexedFrames.push(indexedPixels);
         });
+        return indexedFrames;
+    }
+    var indexedFrames = mapPixelsToIndex(frames, colorLookup);
+    indexedFrames.forEach(function (frame) {
+        gifGenerator.generateFrame(frame);
     });
+    return gifGenerator.getStream();
 }
-},{}],12:[function(require,module,exports) {
+},{}],37:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1117,7 +1090,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '52731' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62693' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1258,5 +1231,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[12,27], null)
+},{}]},{},[37,34], null)
 //# sourceMappingURL=/gif.creator.service.df1e0f74.map
