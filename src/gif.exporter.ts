@@ -27,13 +27,11 @@ export class GIFExporter {
 			this.init();
 			const colorLookup = await this.createColorTable();
 			const frames: Uint8Array[] = await this.recordCanvas();
-			console.log('timeout done');
 
 			const {
 				numericalRGBFrames: [numericalRGBData],
 				stringRGBFrames,
 			} = await this.processFrames(frames);
-			console.log('process done');
 
 			const mappedFrames = await this.mapPixelsToIndex(stringRGBFrames, colorLookup);
 			await this.writeFrames(mappedFrames);
@@ -88,8 +86,6 @@ export class GIFExporter {
 			}, this._delay);
 			setTimeout(() => {
 				clearInterval(intervalRef);
-				console.log('timeout');
-
 				resolve(frameCollection);
 			}, this._duration);
 		});
@@ -142,6 +138,7 @@ export class GIFExporter {
 
 			worker.onmessage = ({ data: { numericalRGBFrames, stringRGBFrames } }) => {
 				resolve({ numericalRGBFrames, stringRGBFrames });
+				worker.terminate();
 			};
 
 			/**

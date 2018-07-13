@@ -1130,11 +1130,9 @@ var GIFExporter = /** @class */function () {
                             return [4 /*yield*/, this.recordCanvas()];
                         case 2:
                             frames = _b.sent();
-                            console.log('timeout done');
                             return [4 /*yield*/, this.processFrames(frames)];
                         case 3:
                             _a = _b.sent(), numericalRGBData = _a.numericalRGBFrames[0], stringRGBFrames = _a.stringRGBFrames;
-                            console.log('process done');
                             return [4 /*yield*/, this.mapPixelsToIndex(stringRGBFrames, colorLookup)];
                         case 4:
                             mappedFrames = _b.sent();
@@ -1219,7 +1217,6 @@ var GIFExporter = /** @class */function () {
                     }, this._delay);
                     setTimeout(function () {
                         clearInterval(intervalRef);
-                        console.log('timeout');
                         resolve(frameCollection);
                     }, this._duration);
                     return [2 /*return*/];
@@ -1296,6 +1293,7 @@ var GIFExporter = /** @class */function () {
                             numericalRGBFrames = _b.numericalRGBFrames,
                             stringRGBFrames = _b.stringRGBFrames;
                         resolve({ numericalRGBFrames: numericalRGBFrames, stringRGBFrames: stringRGBFrames });
+                        worker.terminate();
                     };
                     return [2 /*return*/];
                 });
@@ -1381,7 +1379,7 @@ var GIFExporter = /** @class */function () {
     return GIFExporter;
 }();
 exports.GIFExporter = GIFExporter;
-},{"./color.table.generator":14,"./gif.generator":15,"./process.frame.service.ts":34,"./gif.generator.service.ts":51}],37:[function(require,module,exports) {
+},{"./color.table.generator":14,"./gif.generator":15,"./process.frame.service.ts":35,"./gif.generator.service.ts":36}],12:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1410,7 +1408,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '65398' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '52731' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1551,7 +1549,7 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}],41:[function(require,module,exports) {
+},{}],45:[function(require,module,exports) {
 var bundleURL = null;
 function getBundleURLCached() {
   if (!bundleURL) {
@@ -1581,7 +1579,7 @@ function getBaseURL(url) {
 
 exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
-},{}],39:[function(require,module,exports) {
+},{}],43:[function(require,module,exports) {
 var getBundleURL = require('./bundle-url').getBundleURL;
 
 function loadBundlesLazy(bundles) {
@@ -1658,7 +1656,7 @@ LazyPromise.prototype.catch = function (onError) {
   if (this.promise === null) this.promise = new Promise(this.executor);
   return this.promise.catch(onError);
 };
-},{"./bundle-url":41}],43:[function(require,module,exports) {
+},{"./bundle-url":45}],47:[function(require,module,exports) {
 module.exports = function loadJSBundle(bundle) {
   return new Promise(function (resolve, reject) {
     var script = document.createElement('script');
@@ -1680,6 +1678,6 @@ module.exports = function loadJSBundle(bundle) {
   });
 };
 },{}],0:[function(require,module,exports) {
-var b=require(39);b.register("js",require(43));b.load([["process.frame.service.feafa981.js",34],["gif.generator.service.f06368d6.js",51]]).then(function(){require(16);});
-},{}]},{},[37,0], null)
+var b=require(43);b.register("js",require(47));b.load([["process.frame.service.feafa981.js",35],["gif.generator.service.f06368d6.js",36]]).then(function(){require(16);});
+},{}]},{},[12,0], null)
 //# sourceMappingURL=/gif.exporter.a5b9b237.map

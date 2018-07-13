@@ -1,20 +1,20 @@
-import { GIFExporter } from './gif.exporter';
+import { GIFCreator } from './gif.exporter.single.worker';
 export class Game {
 	private _canvas: HTMLCanvasElement;
 	private _engine: BABYLON.Engine;
 	private _scene: BABYLON.Scene;
 	private _camera: BABYLON.FreeCamera;
 	private _light: BABYLON.Light;
-	private _gifExporter: GIFExporter;
+	private _gifExporter: GIFCreator;
 
 	constructor(canvasElement: string) {
 		this._canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
 		this._engine = new BABYLON.Engine(this._canvas, true, {
 			preserveDrawingBuffer: true,
 		});
-		this._gifExporter = new GIFExporter(this._engine, {
+		this._gifExporter = new GIFCreator(this._engine, {
 			delay: 60,
-			duration: 2000,
+			duration: 5000,
 		});
 	}
 
