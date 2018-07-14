@@ -1,9 +1,9 @@
 const ctx: Worker = self as any;
 
-addEventListener('message', ({ data: { job, params } }) => {
+addEventListener('message', ({ data: { job, frames, params } }) => {
 	switch (job) {
 		case 'flipFrames':
-			const { frames, width, height } = params;
+			const { width, height } = params;
 			flipFrames(frames, width, height);
 	}
 });

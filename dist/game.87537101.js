@@ -103,7 +103,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({16:[function(require,module,exports) {
+})({32:[function(require,module,exports) {
 "use strict";
 
 var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -221,8 +221,12 @@ var GIFCreator = /** @class */function () {
                     setTimeout(function () {
                         clearInterval(intervalRef);
                         var worker = new Worker("/gif.creator.service.df1e0f74.js");
-                        _this._message = { job: 'createGIF', params: { frames: frameCollection, width: _this._width, height: _this._height } };
-                        worker.postMessage(_this._message);
+                        _this._message = {
+                            job: 'createGIF',
+                            frames: frameCollection,
+                            params: { width: _this._width, height: _this._height }
+                        };
+                        worker.postMessage(_this._message, [_this._message.frames]);
                         worker.onmessage = function (_a) {
                             var data = _a.data;
                             console.log('complete', data);
@@ -288,7 +292,7 @@ var GIFCreator = /** @class */function () {
     return GIFCreator;
 }();
 exports.GIFCreator = GIFCreator;
-},{"./gif.creator.service.ts":[["gif.creator.service.df1e0f74.js",34],"gif.creator.service.df1e0f74.map",34]}],11:[function(require,module,exports) {
+},{"./gif.creator.service.ts":[["gif.creator.service.df1e0f74.js",26],"gif.creator.service.df1e0f74.map",26]}],11:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -366,7 +370,7 @@ window.addEventListener('DOMContentLoaded', function () {
         game.stopGIF();
     });
 });
-},{"./gif.exporter.single.worker":16}],37:[function(require,module,exports) {
+},{"./gif.exporter.single.worker":32}],34:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -395,7 +399,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62693' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '55214' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -536,7 +540,7 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}],41:[function(require,module,exports) {
+},{}],38:[function(require,module,exports) {
 var bundleURL = null;
 function getBundleURLCached() {
   if (!bundleURL) {
@@ -566,7 +570,7 @@ function getBaseURL(url) {
 
 exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
-},{}],39:[function(require,module,exports) {
+},{}],36:[function(require,module,exports) {
 var getBundleURL = require('./bundle-url').getBundleURL;
 
 function loadBundlesLazy(bundles) {
@@ -643,7 +647,7 @@ LazyPromise.prototype.catch = function (onError) {
   if (this.promise === null) this.promise = new Promise(this.executor);
   return this.promise.catch(onError);
 };
-},{"./bundle-url":41}],43:[function(require,module,exports) {
+},{"./bundle-url":38}],40:[function(require,module,exports) {
 module.exports = function loadJSBundle(bundle) {
   return new Promise(function (resolve, reject) {
     var script = document.createElement('script');
@@ -665,6 +669,6 @@ module.exports = function loadJSBundle(bundle) {
   });
 };
 },{}],0:[function(require,module,exports) {
-var b=require(39);b.register("js",require(43));
-},{}]},{},[37,0,11], null)
+var b=require(36);b.register("js",require(40));
+},{}]},{},[34,0,11], null)
 //# sourceMappingURL=/game.87537101.map

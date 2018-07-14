@@ -4,7 +4,7 @@ export class GIFCreator {
 	private _duration: number;
 	private _width: number;
 	private _height: number;
-	private _message: { job: string; params?: {} };
+	private _message: { job: string; frames?: Uint8Array[]; params?: {} };
 
 	constructor(engine: BABYLON.Engine, options?: { delay?: number; duration?: number }) {
 		this._canvas = engine.getRenderingCanvas();
@@ -23,8 +23,12 @@ export class GIFCreator {
 			setTimeout(() => {
 				clearInterval(intervalRef);
 				const worker = new Worker('./gif.creator.service.ts');
-				this._message = { job: 'createGIF', params: { frames: frameCollection, width: this._width, height: this._height } };
-				worker.postMessage(this._message);
+				this._message = {
+					job: 'createGIF',
+					frames: frameCollection,
+					params: { width: this._width, height: this._height },
+				};
+				worker.postMessage(this._message, [this._message.frames]);
 				worker.onmessage = ({ data }) => {
 					console.log('complete', data);
 					resolve(data);
