@@ -14,7 +14,7 @@ export class Game {
 		});
 		this._gifExporter = new GIFCreator(this._engine, {
 			delay: 60,
-			duration: 2000,
+			duration: 5000,
 		});
 	}
 
@@ -72,7 +72,10 @@ export class Game {
 	}
 
 	downloadGIF() {
-		this._gifExporter.download();
+		return new Promise(async (resolve, reject) => {
+			await this._gifExporter.download();
+			resolve();
+		});
 	}
 	stopGIF() {
 		this._gifExporter.start();
@@ -80,7 +83,7 @@ export class Game {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-	const recordBtn: HTMLCanvasElement = document.getElementById('recordBtn') as HTMLCanvasElement;
+	const recordBtn: HTMLButtonElement = document.getElementById('recordBtn') as HTMLButtonElement;
 	const stopBtn = document.getElementById('recStopBtn');
 	// Setup GIF generator
 
@@ -93,8 +96,10 @@ window.addEventListener('DOMContentLoaded', () => {
 	// Start render loop.
 	game.doRender();
 
-	recordBtn.addEventListener('click', () => {
-		game.downloadGIF();
+	recordBtn.addEventListener('click', async () => {
+		recordBtn.disabled = true;
+		await game.downloadGIF();
+		recordBtn.disabled = false;
 	});
 	stopBtn.addEventListener('click', () => {
 		game.stopGIF();

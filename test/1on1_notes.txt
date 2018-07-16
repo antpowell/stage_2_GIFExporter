@@ -22,3 +22,5 @@
 #Create GIF Image OBJ
 #Stop should be cancel and create stop function to take over set timeout
 #GIFGenerator swap name to write***** ✔
+
+#ArrayBuffer hand off

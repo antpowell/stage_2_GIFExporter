@@ -197,22 +197,31 @@ var GIFCreator = /** @class */function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             return __awaiter(_this, void 0, void 0, function () {
-                var frameCollection, intervalRef;
+                var intervalRef;
                 var _this = this;
                 return __generator(this, function (_a) {
                     this.init();
                     console.log('record canvas');
-                    frameCollection = [];
                     intervalRef = setInterval(function () {
                         return __awaiter(_this, void 0, void 0, function () {
-                            var _a, _b;
-                            return __generator(this, function (_c) {
-                                switch (_c.label) {
+                            var frame, newFrame, message;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
                                     case 0:
-                                        _b = (_a = frameCollection).push;
                                         return [4 /*yield*/, this.getFrame()];
                                     case 1:
-                                        _b.apply(_a, [_c.sent()]);
+                                        frame = _a.sent();
+                                        return [4 /*yield*/, this.flipAndRotate(new Uint8Array(frame))];
+                                    case 2:
+                                        newFrame = _a.sent();
+                                        console.log(new Uint8Array(newFrame));
+                                        message = {
+                                            job: 'collectFrames',
+                                            params: {
+                                                frame: newFrame
+                                            }
+                                        };
+                                        this._worker.postMessage(message, [message.params.frame]);
                                         return [2 /*return*/];
                                 }
                             });
@@ -220,14 +229,12 @@ var GIFCreator = /** @class */function () {
                     }, this._delay);
                     setTimeout(function () {
                         clearInterval(intervalRef);
-                        var worker = new Worker("/gif.creator.service.df1e0f74.js");
-                        _this._message = {
+                        var message = {
                             job: 'createGIF',
-                            frames: frameCollection,
-                            params: { width: _this._width, height: _this._height }
+                            params: { width: _this._resizeCanvas.width, height: _this._resizeCanvas.height }
                         };
-                        worker.postMessage(_this._message, [_this._message.frames]);
-                        worker.onmessage = function (_a) {
+                        _this._worker.postMessage(message);
+                        _this._worker.onmessage = function (_a) {
                             var data = _a.data;
                             console.log('complete', data);
                             resolve(data);
@@ -241,32 +248,36 @@ var GIFCreator = /** @class */function () {
     GIFCreator.prototype.stop = function () {};
     GIFCreator.prototype.cancel = function () {};
     GIFCreator.prototype.download = function (filename) {
+        var _this = this;
         if (filename === void 0) {
             filename = 'canvasGIF.gif';
         }
-        return __awaiter(this, void 0, Promise, function () {
-            var gif, url, download;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        return [4 /*yield*/, this.start()];
-                    case 1:
-                        gif = _a.sent();
-                        url = URL.createObjectURL(new Blob([new Uint8Array(gif)], {
-                            type: 'image/gif'
-                        }));
-                        download = document.createElement('a');
-                        document.body.appendChild(download);
-                        download.target = '_blank';
-                        download.setAttribute('target', '_blank');
-                        download.style.display = 'none';
-                        download.href = url;
-                        download.download = filename;
-                        download.click();
-                        URL.revokeObjectURL(url);
-                        download.parentElement.removeChild(download);
-                        return [2 /*return*/];
-                }
+        return new Promise(function (resolve, reject) {
+            return __awaiter(_this, void 0, void 0, function () {
+                var gif, url, download;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            return [4 /*yield*/, this.start()];
+                        case 1:
+                            gif = _a.sent();
+                            url = URL.createObjectURL(new Blob([new Uint8Array(gif)], {
+                                type: 'image/gif'
+                            }));
+                            download = document.createElement('a');
+                            document.body.appendChild(download);
+                            download.target = '_blank';
+                            download.setAttribute('target', '_blank');
+                            download.style.display = 'none';
+                            download.href = url;
+                            download.download = filename;
+                            download.click();
+                            URL.revokeObjectURL(url);
+                            download.parentElement.removeChild(download);
+                            resolve();
+                            return [2 /*return*/];
+                    }
+                });
             });
         });
     };
@@ -279,7 +290,7 @@ var GIFCreator = /** @class */function () {
                     gl = this._canvas.getContext('webgl2') || this._canvas.getContext('webgl');
                     pixels = new Uint8Array(this._width * this._height * 4);
                     gl.readPixels(0, 0, this._width, this._height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                    resolve(pixels);
+                    resolve(pixels.buffer);
                     return [2 /*return*/];
                 });
             });
@@ -288,11 +299,65 @@ var GIFCreator = /** @class */function () {
     GIFCreator.prototype.init = function () {
         this._width = this._canvas.width;
         this._height = this._canvas.height;
+        this._worker = new Worker("/gif.creator.service.df1e0f74.js");
+        this.canvasSetup();
+    };
+    GIFCreator.prototype.canvasSetup = function () {
+        this._holdingCanvas = document.createElement('canvas');
+        this._holdingCanvas2D = this._holdingCanvas.getContext('2d');
+        this._holdingCanvas.width = this._width;
+        this._holdingCanvas.height = this._height;
+        this._resizeCanvas = document.createElement('canvas');
+        this._resizeCanvas2D = this._resizeCanvas.getContext('2d');
+    };
+    GIFCreator.prototype.flipAndRotate = function (frame) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var imageData = _this._holdingCanvas2D.createImageData(_this._width, _this._height);
+            imageData.data.set(frame);
+            _this._holdingCanvas2D.putImageData(imageData, 0, 0);
+            _this.resize(_this._resizeCanvas);
+            _this.flip(_this._resizeCanvas2D, _this._holdingCanvas, _this._resizeCanvas);
+            var data = _this._resizeCanvas2D.getImageData(0, 0, _this._resizeCanvas.width, _this._resizeCanvas.height).data;
+            resolve(data.buffer);
+        });
+    };
+    GIFCreator.prototype.resize = function (canvas) {
+        var _this = this;
+        return new Promise(function (resolve, rejct) {
+            var baseSize = 256;
+            var imageAspectRatio = _this._width / _this._height;
+            if (imageAspectRatio < 1) {
+                canvas.width = baseSize * imageAspectRatio;
+                canvas.height = baseSize;
+            } else if (imageAspectRatio > 1) {
+                canvas.width = baseSize;
+                canvas.height = baseSize / imageAspectRatio;
+            } else {
+                canvas.width = baseSize;
+                canvas.height = baseSize;
+            }
+            canvas.width = Math.max(canvas.width, 1);
+            canvas.height = Math.max(canvas.height, 1);
+            resolve();
+        });
+    };
+    GIFCreator.prototype.flip = function (resizeContext, holdingCanvas, resizeCanvas) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            // Scale and draw to flip Y to reorient readPixels.
+            resizeContext.globalCompositeOperation = 'copy';
+            resizeContext.scale(1, -1); // Y flip
+            resizeContext.translate(0, -resizeCanvas.height); // so we can draw at 0,0
+            resizeContext.drawImage(holdingCanvas, 0, 0, _this._width, _this._height, 0, 0, resizeCanvas.width, resizeCanvas.height);
+            resizeContext.setTransform(1, 0, 0, 1, 0, 0);
+            resizeContext.globalCompositeOperation = 'source-over';
+        });
     };
     return GIFCreator;
 }();
 exports.GIFCreator = GIFCreator;
-},{"./gif.creator.service.ts":26}],34:[function(require,module,exports) {
+},{"./gif.creator.service.ts":26}],8:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -321,7 +386,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '55214' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '60198' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -462,7 +527,7 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}],38:[function(require,module,exports) {
+},{}],48:[function(require,module,exports) {
 var bundleURL = null;
 function getBundleURLCached() {
   if (!bundleURL) {
@@ -492,7 +557,7 @@ function getBaseURL(url) {
 
 exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
-},{}],36:[function(require,module,exports) {
+},{}],47:[function(require,module,exports) {
 var getBundleURL = require('./bundle-url').getBundleURL;
 
 function loadBundlesLazy(bundles) {
@@ -569,7 +634,7 @@ LazyPromise.prototype.catch = function (onError) {
   if (this.promise === null) this.promise = new Promise(this.executor);
   return this.promise.catch(onError);
 };
-},{"./bundle-url":38}],40:[function(require,module,exports) {
+},{"./bundle-url":48}],49:[function(require,module,exports) {
 module.exports = function loadJSBundle(bundle) {
   return new Promise(function (resolve, reject) {
     var script = document.createElement('script');
@@ -591,6 +656,6 @@ module.exports = function loadJSBundle(bundle) {
   });
 };
 },{}],0:[function(require,module,exports) {
-var b=require(36);b.register("js",require(40));b.load([["gif.creator.service.df1e0f74.js",26]]).then(function(){require(32);});
-},{}]},{},[34,0], null)
+var b=require(47);b.register("js",require(49));b.load([["gif.creator.service.df1e0f74.js",26]]).then(function(){require(32);});
+},{}]},{},[8,0], null)
 //# sourceMappingURL=/gif.exporter.single.worker.1ae00eab.map

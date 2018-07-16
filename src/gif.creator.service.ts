@@ -956,25 +956,13 @@ export class GIFGenerator {
 
 /* ----------------------------------------------GIFGen END---------------------------------------------------------- */
 
+/* ----------------------------------------------Worker Processing Duties START---------------------------------------------------------- */
+
 const ctx: Worker = self as any;
 let _colorTableGen: ColorTableGenerator;
 
-addEventListener('message', ev => {
-	console.log(ev.data);
-});
-
 const gifGenerator: GIFGenerator = new GIFGenerator();
-
-onmessage = ({ data: { job, params } }) => {
-	if (job === 'createGIF') {
-		const { frames, width, height } = params;
-		const colorLookup: { [index: string]: number } = createColorTable(frames[0], width, height);
-		const { numericalRGBFrames, stringRGBFrames } = processFrames(frames, width, height);
-		const gifData = generateGIF(stringRGBFrames, colorLookup);
-		console.log('worker gif data', gifData);
-		ctx.postMessage(gifData);
-	}
-};
+const _frameCollection: Uint8Array[] = [];
 
 function createColorTable(frame: Uint8Array, width: number, height: number): { [index: string]: number } {
 	_colorTableGen = new ColorTableGenerator(frame);
@@ -1004,17 +992,17 @@ function processFrames(
 		const numericalRGBFrames: Uint8Array[] = [];
 		const stringRGBFrames: string[][] = [];
 		frames.forEach(frame => {
-			const mid = (height / 2) | 0;
-			const rowLen = width * 4;
+			// const mid = (height / 2) | 0;
+			// const rowLen = width * 4;
 
-			let flipRow = new Uint8Array(rowLen);
-			for (let rowNum = 0; rowNum < mid; ++rowNum) {
-				let topPointer = rowNum * rowLen;
-				let bottomPointer = (height - rowNum - 1) * rowLen;
-				flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
-				frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
-				frame.set(flipRow, bottomPointer);
-			}
+			// let flipRow = new Uint8Array(rowLen);
+			// for (let rowNum = 0; rowNum < mid; ++rowNum) {
+			// 	let topPointer = rowNum * rowLen;
+			// 	let bottomPointer = (height - rowNum - 1) * rowLen;
+			// 	flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
+			// 	frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
+			// 	frame.set(flipRow, bottomPointer);
+			// }
 			const { numericalRGBData, stringRGBData } = toRGB(frame);
 			numericalRGBFrames.push(numericalRGBData);
 			stringRGBFrames.push(stringRGBData);
@@ -1069,3 +1057,48 @@ function generateGIF(frames: string[][], colorLookup: { [index: string]: number 
 	});
 	return gifGenerator.getStream();
 }
+
+function collectFrames(frame: ArrayBuffer) {
+	_frameCollection.push(new Uint8Array(frame));
+}
+
+function getColorSamplingFrames(frames: Uint8Array[]) {
+	/* every 5 frames placed in sampling frames array */
+	const samplingFrames = frames.filter((frame, index) => (index + 1) % 5 === 0);
+	/* Combine arrays in samplingFrames into one Uint8Array */
+	return samplingFrames.reduce((accFrame: Uint8Array, frame) => {
+		const sampling = new Uint8Array(accFrame.length + frame.length);
+		sampling.set(accFrame);
+		sampling.set(frame, accFrame.length);
+
+		return sampling;
+	}, new Uint8Array([]));
+}
+
+/* ----------------------------------------------Worker Processing Duties END---------------------------------------------------------- */
+
+/* ----------------------------------------------Worker Router START---------------------------------------------------------- */
+
+addEventListener('message', ev => {
+	console.log(ev.data);
+});
+
+onmessage = ({ data: { job, params } }) => {
+	switch (job) {
+		case 'createGIF':
+			const { width, height } = params;
+			const { numericalRGBFrames, stringRGBFrames } = processFrames(_frameCollection, width, height);
+			const samplingFrame = getColorSamplingFrames(numericalRGBFrames);
+			const colorLookup: { [index: string]: number } = createColorTable(samplingFrame, width, height);
+			const gifData = generateGIF(stringRGBFrames, colorLookup);
+			console.log('worker gif data', gifData);
+			ctx.postMessage(gifData);
+			break;
+		case 'collectFrames':
+			const { frame }: { frame: ArrayBuffer } = params;
+			collectFrames(frame);
+			break;
+	}
+};
+
+/* ----------------------------------------------Worker Router END---------------------------------------------------------- */

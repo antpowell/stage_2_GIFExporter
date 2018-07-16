@@ -957,29 +957,11 @@ var GIFGenerator = /** @class */function () {
 }();
 exports.GIFGenerator = GIFGenerator;
 /* ----------------------------------------------GIFGen END---------------------------------------------------------- */
+/* ----------------------------------------------Worker Processing Duties START---------------------------------------------------------- */
 var ctx = self;
 var _colorTableGen;
-addEventListener('message', function (ev) {
-    console.log(ev.data);
-});
 var gifGenerator = new GIFGenerator();
-onmessage = function onmessage(_a) {
-    var _b = _a.data,
-        job = _b.job,
-        params = _b.params;
-    if (job === 'createGIF') {
-        var frames = params.frames,
-            width = params.width,
-            height = params.height;
-        var colorLookup = createColorTable(frames[0], width, height);
-        var _c = processFrames(frames, width, height),
-            numericalRGBFrames = _c.numericalRGBFrames,
-            stringRGBFrames = _c.stringRGBFrames;
-        var gifData = generateGIF(stringRGBFrames, colorLookup);
-        console.log('worker gif data', gifData);
-        ctx.postMessage(gifData);
-    }
-};
+var _frameCollection = [];
 function createColorTable(frame, width, height) {
     var _a;
     _colorTableGen = new ColorTableGenerator(frame);
@@ -997,16 +979,16 @@ function processFrames(frames, width, height) {
         var numericalRGBFrames = [];
         var stringRGBFrames = [];
         frames.forEach(function (frame) {
-            var mid = height / 2 | 0;
-            var rowLen = width * 4;
-            var flipRow = new Uint8Array(rowLen);
-            for (var rowNum = 0; rowNum < mid; ++rowNum) {
-                var topPointer = rowNum * rowLen;
-                var bottomPointer = (height - rowNum - 1) * rowLen;
-                flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
-                frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
-                frame.set(flipRow, bottomPointer);
-            }
+            // const mid = (height / 2) | 0;
+            // const rowLen = width * 4;
+            // let flipRow = new Uint8Array(rowLen);
+            // for (let rowNum = 0; rowNum < mid; ++rowNum) {
+            // 	let topPointer = rowNum * rowLen;
+            // 	let bottomPointer = (height - rowNum - 1) * rowLen;
+            // 	flipRow.set(frame.subarray(topPointer, topPointer + rowLen));
+            // 	frame.copyWithin(topPointer, bottomPointer, bottomPointer + rowLen);
+            // 	frame.set(flipRow, bottomPointer);
+            // }
             var _a = toRGB(frame),
                 numericalRGBData = _a.numericalRGBData,
                 stringRGBData = _a.stringRGBData;
@@ -1061,7 +1043,52 @@ function generateGIF(frames, colorLookup) {
     });
     return gifGenerator.getStream();
 }
-},{}],34:[function(require,module,exports) {
+function collectFrames(frame) {
+    _frameCollection.push(new Uint8Array(frame));
+}
+function getColorSamplingFrames(frames) {
+    /* every 5 frames placed in sampling frames array */
+    var samplingFrames = frames.filter(function (frame, index) {
+        return (index + 1) % 5 === 0;
+    });
+    /* Combine arrays in samplingFrames into one Uint8Array */
+    return samplingFrames.reduce(function (accFrame, frame) {
+        var sampling = new Uint8Array(accFrame.length + frame.length);
+        sampling.set(accFrame);
+        sampling.set(frame, accFrame.length);
+        return sampling;
+    }, new Uint8Array([]));
+}
+/* ----------------------------------------------Worker Processing Duties END---------------------------------------------------------- */
+/* ----------------------------------------------Worker Router START---------------------------------------------------------- */
+addEventListener('message', function (ev) {
+    console.log(ev.data);
+});
+onmessage = function onmessage(_a) {
+    var _b = _a.data,
+        job = _b.job,
+        params = _b.params;
+    switch (job) {
+        case 'createGIF':
+            var width = params.width,
+                height = params.height;
+            var _c = processFrames(_frameCollection, width, height),
+                numericalRGBFrames = _c.numericalRGBFrames,
+                stringRGBFrames = _c.stringRGBFrames;
+            var samplingFrame = getColorSamplingFrames(numericalRGBFrames);
+            var colorLookup = createColorTable(samplingFrame, width, height);
+            var gifData = generateGIF(stringRGBFrames, colorLookup);
+            console.log('worker gif data', gifData);
+            ctx.postMessage(gifData);
+            break;
+        case 'collectFrames':
+            var frame = params.frame;
+            collectFrames(frame);
+            break;
+    }
+};
+/* ----------------------------------------------Worker Router END---------------------------------------------------------- */
+},{}],8:[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -1090,7 +1117,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '55214' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '60198' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -1231,5 +1258,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},[34,26], null)
+},{}]},{},[8,26], null)
 //# sourceMappingURL=/gif.creator.service.df1e0f74.map
